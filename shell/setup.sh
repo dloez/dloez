@@ -1,4 +1,22 @@
 #!/bin/bash
+# This script installs zsh, oh my zsh and configures powerlvl10k as the default theme for zsh
+# changes the default path on WSL distributions to /home/$USER
+# and installs these tools:
+#  - docker
+
+wsl_home () {
+  if ! grep -q WSL /proc/version; then
+    return
+  fi
+
+  if grep -q WSL ~/.zshrc; then
+    return
+  fi
+
+  printf "# WSL Config\ncd\n" >> ~/.zshrc
+}
+
+# update repository and install dependencies
 sudo apt-get update && sudo apt-get install curl git -y
 
 # install and set by default zsh
@@ -13,12 +31,8 @@ git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$
 curl https://raw.githubusercontent.com/dloez/dloez/main/shell/zshrc > $HOME/.zshrc
 curl https://raw.githubusercontent.com/dloez/dloez/main/shell/p10k.zsh > $HOME/.p10k.zsh
 
-# customize .zshrc if we are on WSL
-if grep -q WSL /proc/version; then
-  if ! grep -q WSL ~/.zshrc; then
-    printf "# WSL Config\ncd\n" >> ~/.zshrc
-  fi
-fi
+# customize .zshrc if we are on WSL to use /home/$USER as default location
+wsl_home
 
 # install tools
 # docker
