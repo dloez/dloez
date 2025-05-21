@@ -62,13 +62,61 @@ spec:
   selector:
     app: pihole
   ports:
-  - name: dns-tcp
-    port: 53
-    targetPort: 53
-    protocol: TCP
-    nodePort: 30053
-  - name: dns-udp
-    port: 53
-    targetPort: 53
-    protocol: UDP
-    nodePort: 30053
+    - name: dns-tcp
+      port: 53
+      targetPort: 53
+      protocol: TCP
+      nodePort: 30053
+    - name: dns-udp
+      port: 53
+      targetPort: 53
+      protocol: UDP
+      nodePort: 30053
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-web
+  namespace: pihole
+spec:
+  selector:
+    app: pihole
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: 443
+      protocol: TCP
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pihole-cert
+  namespace: pihole
+spec:
+  secretName: pihole-tls
+  issuerRef:
+    name: cloudflare-issuer
+    kind: ClusterIssuer
+  dnsNames:
+    - pihole.tom.dloez.dev
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: pihole
+  namespace: pihole
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`pihole.tom.dloez.dev`)
+      kind: Rule
+      services:
+        - name: pihole-web
+          port: 80
+  tls:
+    secretName: pihole-tls
