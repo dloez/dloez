@@ -1,4 +1,16 @@
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pihole-init-script
+  namespace: pihole
+data:
+  init-blocklists.sh: |
+    #!/bin/bash
+    sleep 30
+    pihole-FTL sqlite3 /etc/pihole/gravity.db "INSERT INTO adlist (address, enabled, comment) VALUES ('https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt', 1, 'HaGeZi Pro blocklist')"
+    pihole -g
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,7 +30,7 @@ spec:
     spec:
       containers:
         - name: pihole
-          image: pihole/pihole:latest
+          image: pihole/pihole:2025.04.0
           ports:
             - containerPort: 53
               protocol: TCP
@@ -51,6 +63,19 @@ spec:
                 - NET_ADMIN
                 - SYS_TIME
                 - SYS_NICE
+          volumeMounts:
+            - name: init-script
+              mountPath: /etc/pihole/init-blocklists.sh
+              subPath: init-blocklists.sh
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/bash", "/etc/pihole/init-blocklists.sh"]
+      volumes:
+        - name: init-script
+          configMap:
+            name: pihole-init-script
+            defaultMode: 0755
 ---
 apiVersion: v1
 kind: Service
@@ -91,18 +116,18 @@ spec:
       targetPort: 443
       protocol: TCP
 ---
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: pihole-cert
-  namespace: pihole
-spec:
-  secretName: pihole-tls
-  issuerRef:
-    name: cloudflare-issuer
-    kind: ClusterIssuer
-  dnsNames:
-    - pihole.tom.dloez.dev
+# apiVersion: cert-manager.io/v1
+# kind: Certificate
+# metadata:
+#   name: pihole-cert
+#   namespace: pihole
+# spec:
+#   secretName: pihole-tls
+#   issuerRef:
+#     name: cloudflare-issuer
+#     kind: ClusterIssuer
+#   dnsNames:
+#     - pihole.tom.dloez.dev
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
