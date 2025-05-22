@@ -105,6 +105,17 @@ spec:
     - pihole.tom.dloez.dev
 ---
 apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: pihole-redirect
+  namespace: pihole
+spec:
+  redirectRegex:
+    regex: ^https://pihole.tom.dloez.dev/$
+    replacement: https://pihole.tom.dloez.dev/admin
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: pihole
@@ -115,6 +126,8 @@ spec:
   routes:
     - match: Host(`pihole.tom.dloez.dev`)
       kind: Rule
+      middlewares:
+        - name: pihole-redirect
       services:
         - name: pihole-web
           port: 80
