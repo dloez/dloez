@@ -40,6 +40,8 @@ spec:
               protocol: TCP
             - containerPort: 443
               protocol: TCP
+            - containerPort: 67
+              protocol: UDP
           env:
             - name: TZ
               value: "Europe/London"
@@ -101,6 +103,10 @@ spec:
       port: 53
       targetPort: 53
       protocol: UDP
+    - name: dhcp
+      port: 67
+      targetPort: 67
+      protocol: UDP
 ---
 apiVersion: v1
 kind: Service
@@ -120,18 +126,18 @@ spec:
       targetPort: 443
       protocol: TCP
 ---
-# apiVersion: cert-manager.io/v1
-# kind: Certificate
-# metadata:
-#   name: pihole-cert
-#   namespace: pihole
-# spec:
-#   secretName: pihole-tls
-#   issuerRef:
-#     name: cloudflare-issuer
-#     kind: ClusterIssuer
-#   dnsNames:
-#     - pihole.tom.dloez.dev
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pihole-cert
+  namespace: pihole
+spec:
+  secretName: pihole-tls
+  issuerRef:
+    name: cloudflare-issuer
+    kind: ClusterIssuer
+  dnsNames:
+    - pihole.tom.dloez.dev
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
