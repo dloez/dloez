@@ -10,6 +10,7 @@ data:
     sleep 30
     pihole-FTL sqlite3 /etc/pihole/gravity.db "INSERT INTO adlist (address, enabled, comment) VALUES ('https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt', 1, 'HaGeZi Pro blocklist')"
     pihole -g
+    pihole restartdns reload-lists
 ---
 apiVersion: v1
 kind: ConfigMap
