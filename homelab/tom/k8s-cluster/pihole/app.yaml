@@ -40,8 +40,6 @@ spec:
               protocol: TCP
             - containerPort: 443
               protocol: TCP
-            - containerPort: 67
-              protocol: UDP
           env:
             - name: TZ
               value: "Europe/London"
@@ -102,10 +100,6 @@ spec:
     - name: dns-udp
       port: 53
       targetPort: 53
-      protocol: UDP
-    - name: dhcp
-      port: 67
-      targetPort: 67
       protocol: UDP
 ---
 apiVersion: v1
