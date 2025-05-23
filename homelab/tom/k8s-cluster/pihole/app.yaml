@@ -11,16 +11,6 @@ data:
     pihole-FTL sqlite3 /etc/pihole/gravity.db "INSERT INTO adlist (address, enabled, comment) VALUES ('https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt', 1, 'HaGeZi Pro blocklist')"
     pihole -g
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: pihole-custom-dns
-  namespace: pihole
-data:
-  custom.list: |
-    192.168.1.10 server1.tom.home
-    192.168.1.11 agent2.tom.home
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -60,6 +50,10 @@ spec:
                   key: pihole-web-password
             - name: FTLCONF_dns_listeningMode
               value: "all"
+            - name: FTLCONF_dns_hosts
+              value: |
+                192.168.1.10 server1.tom.home
+                192.168.1.11 agent2.tom.home
           resources:
             requests:
               memory: "256Mi"
@@ -77,9 +71,6 @@ spec:
             - name: init-script
               mountPath: /etc/pihole/init-blocklists.sh
               subPath: init-blocklists.sh
-            - name: custom-dns
-              mountPath: /etc/pihole/custom.list
-              subPath: custom.list
           lifecycle:
             postStart:
               exec:
@@ -89,9 +80,6 @@ spec:
           configMap:
             name: pihole-init-script
             defaultMode: 0755
-        - name: custom-dns
-          configMap:
-            name: pihole-custom-dns
 ---
 apiVersion: v1
 kind: Service
