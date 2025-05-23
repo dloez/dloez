@@ -17,8 +17,9 @@ metadata:
   name: pihole-custom-dns
   namespace: pihole
 data:
-  192.168.1.10: server1.tom.home
-  192.168.1.11: agent2.tom.home
+  custom.list: |
+    192.168.1.10: server1.tom.home
+    192.168.1.11: agent2.tom.home
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -78,6 +79,7 @@ spec:
               subPath: init-blocklists.sh
             - name: custom-dns
               mountPath: /etc/pihole/custom.list
+              subPath: custom.list
           lifecycle:
             postStart:
               exec:
