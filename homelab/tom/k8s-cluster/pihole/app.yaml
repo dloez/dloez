@@ -131,7 +131,7 @@ spec:
     name: cloudflare-issuer
     kind: ClusterIssuer
   dnsNames:
-    - pihole.tom.dloez.dev
+    - pihole.dloez.dev
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
@@ -140,8 +140,8 @@ metadata:
   namespace: pihole
 spec:
   redirectRegex:
-    regex: ^https://pihole.tom.dloez.dev/$
-    replacement: https://pihole.tom.dloez.dev/admin
+    regex: ^https://pihole.dloez.dev/$
+    replacement: https://pihole.dloez.dev/admin
     permanent: true
 ---
 apiVersion: traefik.io/v1alpha1
