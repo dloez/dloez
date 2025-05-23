@@ -78,7 +78,6 @@ spec:
               subPath: init-blocklists.sh
             - name: custom-dns
               mountPath: /etc/pihole/custom.list
-              subPath: custom.list
           lifecycle:
             postStart:
               exec:
