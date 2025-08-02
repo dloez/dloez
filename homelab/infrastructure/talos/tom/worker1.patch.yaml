@@ -1,0 +1,22 @@
+machine:
+  network:
+    hostname: worker1.tom
+    interfaces:
+      - interface: end0
+        addresses:
+          - 192.168.1.11/24
+---
+apiVersion: v1alpha1
+kind: VolumeConfig
+name: EPHEMERAL
+provisioning:
+  maxSize: 100GB
+---
+apiVersion: v1alpha1
+kind: UserVolumeConfig
+name: persistent-cluster-data
+provisioning:
+  diskSelector:
+    match: system_disk
+  minSize: 895GB
+  maxSize: 895GB

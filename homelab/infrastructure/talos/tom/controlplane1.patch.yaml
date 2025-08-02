@@ -1,0 +1,7 @@
+machine:
+  network:
+    hostname: controlplane1.tom
+    interfaces:
+      - interface: end0
+        addresses:
+          - 192.168.1.10/24

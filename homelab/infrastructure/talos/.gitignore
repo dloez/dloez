@@ -1,0 +1,6 @@
+secrets.yaml
+talosconfig
+controlplane*.yaml
+!controlplane*.patch.yaml
+worker*.yaml
+!worker*.patch.yaml
