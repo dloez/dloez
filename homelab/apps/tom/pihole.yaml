@@ -1,0 +1,241 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pihole
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: pihole-web-password
+  namespace: pihole
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: 1password
+  target:
+    creationPolicy: Owner
+  data:
+    - secretKey: pihole-web-password
+      remoteRef:
+        key: pihole/password
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pihole-init-script
+  namespace: pihole
+data:
+  init-blocklists.sh: |
+    #!/bin/bash
+    sleep 30
+    pihole-FTL sqlite3 /etc/pihole/gravity.db "INSERT INTO adlist (address, enabled, comment) VALUES ('https://raw.githubusercontent.com/hagezi/dns-blocklists/main/adblock/pro.txt', 1, 'HaGeZi Pro blocklist')"
+    pihole -g
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pihole
+  labels:
+    app: pihole
+  namespace: pihole
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pihole
+  template:
+    metadata:
+      labels:
+        app: pihole
+    spec:
+      containers:
+        - name: pihole
+          image: pihole/pihole:2025.05.1
+          ports:
+            - containerPort: 53
+              protocol: TCP
+            - containerPort: 53
+              protocol: UDP
+            - containerPort: 80
+              protocol: TCP
+            - containerPort: 443
+              protocol: TCP
+          env:
+            - name: TZ
+              value: "Europe/London"
+            - name: FTLCONF_webserver_api_password
+              valueFrom:
+                secretKeyRef:
+                  name: pihole-web-password
+                  key: pihole-web-password
+            - name: FTLCONF_dns_listeningMode
+              value: "all"
+            - name: FTLCONF_dns_hosts
+              value: |
+                192.168.1.10 controlplane1.tom
+                192.168.1.11 worker1.tom
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_ADMIN
+                - SYS_TIME
+                - SYS_NICE
+          volumeMounts:
+            - name: init-script
+              mountPath: /etc/pihole/init-blocklists.sh
+              subPath: init-blocklists.sh
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/bash", "/etc/pihole/init-blocklists.sh"]
+      volumes:
+        - name: init-script
+          configMap:
+            name: pihole-init-script
+            defaultMode: 0755
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-dns
+  namespace: pihole
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.1.18"
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app: pihole
+  ports:
+    - name: dns-tcp
+      port: 53
+      targetPort: 53
+      protocol: TCP
+    - name: dns-udp
+      port: 53
+      targetPort: 53
+      protocol: UDP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-web
+  namespace: pihole
+spec:
+  selector:
+    app: pihole
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: https
+      port: 443
+      targetPort: 443
+      protocol: TCP
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pihole-cert
+  namespace: pihole
+spec:
+  secretName: pihole-tls
+  issuerRef:
+    name: cloudflare-issuer
+    kind: ClusterIssuer
+  dnsNames:
+    - pihole.dloez.dev
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: pihole-gateway
+  namespace: pihole
+spec:
+  gatewayClassName: traefik
+  listeners:
+    - name: websecure
+      port: 443
+      protocol: HTTPS
+      hostname: pihole.dloez.dev
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: pihole-tls
+    - name: web
+      port: 80
+      protocol: HTTP
+      hostname: pihole.dloez.dev
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: pihole-https-redirect
+  namespace: pihole
+spec:
+  parentRefs:
+    - name: pihole-gateway
+      sectionName: web
+  hostnames:
+    - pihole.dloez.dev
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: pihole-root-redirect
+  namespace: pihole
+spec:
+  parentRefs:
+    - name: pihole-gateway
+      sectionName: websecure
+  hostnames:
+    - pihole.dloez.dev
+  rules:
+    - matches:
+        - path:
+            type: Exact
+            value: /
+      filters:
+        - type: RequestRedirect
+          requestRedirect:
+            path:
+              type: ReplaceFullPath
+              replaceFullPath: /admin
+            statusCode: 301
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: pihole-web
+          port: 80
