@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - 1password-cluster-secret-store.yaml
   - cf-cluster-issuer.yaml
+  - ip-pools.yaml
