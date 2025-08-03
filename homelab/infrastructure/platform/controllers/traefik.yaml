@@ -34,7 +34,7 @@ spec:
       kubernetesIngress:
         enabled: false
     service:
-      type: NodePort
+      type: LoadBalancer
     additionalArguments:
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
