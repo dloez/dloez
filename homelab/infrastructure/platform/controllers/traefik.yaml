@@ -41,7 +41,7 @@ spec:
     ports:
       web:
         port: 8000
-        expose: 
+        expose:
           default: true
         exposedPort: 80
         protocol: TCP

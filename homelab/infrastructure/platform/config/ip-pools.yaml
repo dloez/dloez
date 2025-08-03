@@ -15,4 +15,4 @@ metadata:
   namespace: metallb
 spec:
   ipAddressPools:
-    - basic 
+    - basic
