@@ -5,3 +5,10 @@ resources:
   - 1password-cluster-secret-store.yaml
   - cf-cluster-issuer.yaml
   - ip-pools.yaml
+
+patches:
+  - path: traefik-service-patch.yaml
+    target:
+      kind: Service
+      name: traefik
+      namespace: traefik

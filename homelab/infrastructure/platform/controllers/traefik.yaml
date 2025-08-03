@@ -35,8 +35,6 @@ spec:
         enabled: false
     service:
       type: LoadBalancer
-      annotations:
-        metallb.universe.tf/loadBalancerIPs: "192.168.1.19"
     additionalArguments:
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
