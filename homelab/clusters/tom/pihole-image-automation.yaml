@@ -47,5 +47,5 @@ spec:
     kind: GitRepository
     name: flux-system
   update:
-    path: homelab/clusters/tom
+    path: homelab/apps/tom
     strategy: Setters
