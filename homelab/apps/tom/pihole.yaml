@@ -4,9 +4,9 @@ kind: Namespace
 metadata:
   name: pihole
   labels:
-    pod-security.kubernetes.io/enforce: baseline
-    pod-security.kubernetes.io/audit: baseline
-    pod-security.kubernetes.io/warn: baseline
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
 ---
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
@@ -87,15 +87,7 @@ spec:
               memory: "512Mi"
               cpu: "500m"
           securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
-            runAsUser: 999
-            runAsGroup: 999
-            seccompProfile:
-              type: RuntimeDefault
             capabilities:
-              drop:
-                - ALL
               add:
                 - NET_ADMIN
                 - SYS_TIME
@@ -178,7 +170,7 @@ spec:
   gatewayClassName: traefik
   listeners:
     - name: websecure
-      port: 443
+      port: 8443
       protocol: HTTPS
       hostname: pihole.dloez.dev
       tls:
@@ -187,7 +179,7 @@ spec:
           - kind: Secret
             name: pihole-tls
     - name: web
-      port: 80
+      port: 8000
       protocol: HTTP
       hostname: pihole.dloez.dev
 ---
