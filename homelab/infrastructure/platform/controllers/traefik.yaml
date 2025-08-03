@@ -20,8 +20,6 @@ metadata:
   namespace: traefik
 spec:
   interval: 5m
-  install:
-    disableWait: true
   chart:
     spec:
       chart: traefik
@@ -36,7 +34,7 @@ spec:
       kubernetesIngress:
         enabled: false
     service:
-      type: LoadBalancer
+      type: NodePort
     additionalArguments:
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
