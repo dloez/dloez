@@ -31,26 +31,14 @@ spec:
     providers:
       kubernetesGateway:
         enabled: true
+      kubernetesIngress:
+        enabled: false
     service:
       type: LoadBalancer
       annotations:
         metallb.universe.tf/loadBalancerIPs: "192.168.1.19"
-    ports:
-      web:
-        port: 8000
-        expose: true
-        exposedPort: 80
-        protocol: TCP
-      websecure:
-        port: 8443
-        expose: true
-        exposedPort: 443
-        protocol: TCP
     additionalArguments:
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-    experimental:
-      kubernetesGateway:
-        enabled: true
     rbac:
       enabled: true
