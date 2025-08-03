@@ -38,14 +38,12 @@ spec:
     ports:
       web:
         port: 8000
-        expose:
-          default: true
+        expose: true
         exposedPort: 80
         protocol: TCP
       websecure:
         port: 8443
-        expose:
-          default: true
+        expose: true
         exposedPort: 443
         protocol: TCP
     additionalArguments:
