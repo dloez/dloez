@@ -7,6 +7,8 @@ metadata:
 spec:
   image: docker.io/pihole/pihole
   interval: 5m0s
+  exclusionList:
+    - ^.*\.sig$
 ---
 apiVersion: image.toolkit.fluxcd.io/v1beta2
 kind: ImagePolicy
@@ -16,9 +18,12 @@ metadata:
 spec:
   imageRepositoryRef:
     name: pihole
+  filterTags:
+    pattern: '^(?P<YYYY>\d{4})\.(?P<MM>\d{2})\.(?P<RELEASE>\d+)$'
+    extract: '$YYYY.$MM.$RELEASE'
   policy:
-    semver:
-      range: '>=2025.0.0 <2026'
+    alphabetical:
+      order: asc
 ---
 apiVersion: image.toolkit.fluxcd.io/v1beta2
 kind: ImageUpdateAutomation
