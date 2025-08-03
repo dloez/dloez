@@ -54,6 +54,8 @@ flux bootstrap github \
     --branch main \
     --personal \
     --path homelab/clusters/tom \
+    --components-extra image-reflector-controller,image-automation-controller \
+    --read-write-key
 ```
 
 5. Monitor kustomizations reconciliations by running:
