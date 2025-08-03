@@ -20,6 +20,8 @@ metadata:
   namespace: traefik
 spec:
   interval: 5m
+  install:
+    disableWait: true
   chart:
     spec:
       chart: traefik
