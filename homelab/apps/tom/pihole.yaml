@@ -67,25 +67,25 @@ spec:
               protocol: TCP
           env:
             - name: TZ
-              value: "Europe/London"
+              value: 'Europe/London'
             - name: FTLCONF_webserver_api_password
               valueFrom:
                 secretKeyRef:
                   name: pihole-web-password
                   key: pihole-web-password
             - name: FTLCONF_dns_listeningMode
-              value: "all"
+              value: 'all'
             - name: FTLCONF_dns_hosts
               value: |
                 192.168.1.10 controlplane1.tom
                 192.168.1.11 worker1.tom
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "100m"
+              memory: '256Mi'
+              cpu: '100m'
             limits:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: '512Mi'
+              cpu: '500m'
           securityContext:
             capabilities:
               add:
@@ -99,7 +99,7 @@ spec:
           lifecycle:
             postStart:
               exec:
-                command: ["/bin/bash", "/etc/pihole/init-blocklists.sh"]
+                command: ['/bin/bash', '/etc/pihole/init-blocklists.sh']
       volumes:
         - name: init-script
           configMap:
@@ -112,7 +112,7 @@ metadata:
   name: pihole-dns
   namespace: pihole
   annotations:
-    metallb.universe.tf/loadBalancerIPs: "192.168.1.18"
+    metallb.universe.tf/loadBalancerIPs: '192.168.1.18'
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local

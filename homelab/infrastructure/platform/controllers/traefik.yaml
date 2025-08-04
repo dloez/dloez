@@ -23,7 +23,7 @@ spec:
   chart:
     spec:
       chart: traefik
-      version: "37.0.0"
+      version: '37.0.0'
       sourceRef:
         kind: HelmRepository
         name: traefik
@@ -36,8 +36,8 @@ spec:
     service:
       enabled: false
     additionalArguments:
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - '--entrypoints.web.http.redirections.entryPoint.to=websecure'
+      - '--entrypoints.web.http.redirections.entryPoint.scheme=https'
     ports:
       web:
         port: 8000

@@ -1,15 +1,8 @@
 {
-  "overrides": [
-    {
-      "files": ["homelab/**/*.yaml", "homelab/**/*.yml"],
-      "options": {
-        "tabWidth": 2,
-        "useTabs": false,
-        "singleQuote": false,
-        "trailingComma": "none",
-        "bracketSpacing": true,
-        "proseWrap": "preserve"
-      }
-    }
-  ]
+  "tabWidth": 2,
+  "useTabs": false,
+  "singleQuote": true,
+  "trailingComma": "none",
+  "bracketSpacing": true,
+  "proseWrap": "preserve"
 }

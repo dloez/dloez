@@ -1,0 +1,118 @@
+name: Format files
+on:
+  pull_request:
+    types: [opened, reopened, edited, synchronize]
+    branches:
+      - main
+jobs:
+  fix-k8s-yaml-markers:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      markers-modified: ${{ steps.check-changes.outputs.modified }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.head_ref }}
+
+      - name: Get changed YAML files
+        id: changed-yaml-files
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c
+        with:
+          files: |
+            homelab/**/*.yaml
+          files_ignore: |
+            homelab/clusters/tom/flux-system/**
+            homelab/infrastructure/terraform/**
+            homelab/infrastructure/talos/**
+
+      - name: Fix YAML document markers
+        if: steps.changed-yaml-files.outputs.any_changed == 'true'
+        env:
+          CHANGED_FILES: ${{ steps.changed-yaml-files.outputs.all_changed_files }}
+        run: |
+          echo "Changed YAML files:"
+          echo "$CHANGED_FILES"
+          curl -o add-yaml-markers.sh -L "https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/add-yaml-markers.sh"
+          chmod +x add-yaml-markers.sh
+          ./add-yaml-markers.sh $CHANGED_FILES
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "modified=true" >> $GITHUB_OUTPUT
+          else
+            echo "modified=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit marker changes
+        if: steps.check-changes.outputs.modified == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add homelab/
+          git commit -m "add yaml document start markers"
+          git push
+          echo "Added YAML document markers and pushed changes"
+
+  format-with-prettier:
+    runs-on: ubuntu-latest
+    needs: fix-k8s-yaml-markers
+    if: needs.fix-k8s-yaml-markers.outputs.markers-modified == 'false'
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.head_ref }}
+
+      - name: Get changed YAML files
+        id: changed-yaml-files
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c
+        with:
+          files: |
+            homelab/**/*.yaml
+          files_ignore: |
+            homelab/clusters/tom/flux-system/**
+            homelab/infrastructure/terraform/**
+            homelab/infrastructure/talos/**
+
+      - name: Setup Node.js
+        if: steps.changed-yaml-files.outputs.any_changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Prettier
+        if: steps.changed-yaml-files.outputs.any_changed == 'true'
+        run: npm install -g prettier
+
+      - name: Format YAML files with Prettier
+        if: steps.changed-yaml-files.outputs.any_changed == 'true'
+        env:
+          CHANGED_FILES: ${{ steps.changed-yaml-files.outputs.all_changed_files }}
+        run: |
+          echo "Formatting YAML files:"
+          echo "$CHANGED_FILES"
+          prettier --write $CHANGED_FILES
+
+      - name: Commit formatting changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add homelab/
+            git commit -m "format yaml files with prettier"
+            git push
+            echo "Formatted files with Prettier and pushed changes"
+          else
+            echo "No formatting changes needed"
+          fi
