@@ -28,7 +28,6 @@ if [ "$DRY_RUN" = true ]; then
   echo "Running in dry-run mode - no files will be modified"
 fi
 
-# Find YAML files (excluding flux-system and terraform)
 yaml_files=$(find "$TARGET_DIR" -name "*.yaml" -o -name "*.yml" 2>/dev/null | \
   grep -v "flux-system/" | \
   grep -v "talos/" | \

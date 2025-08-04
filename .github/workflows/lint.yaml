@@ -35,9 +35,9 @@ jobs:
         run: |
           echo "Changed YAML files:"
           echo "$CHANGED_FILES"
-          
-          chmod +x $GITHUB_WORKSPACE/scripts/add-yaml-markers.sh
-          $GITHUB_WORKSPACE/scripts/add-yaml-markers.sh $CHANGED_FILES
+          curl -o add-yaml-markers.sh -L "https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/add-yaml-markers.sh"
+          chmod +x add-yaml-markers.sh
+          ./add-yaml-markers.sh $CHANGED_FILES
       - name: Commit changes
         run: |
           if [ -n "$(git status --porcelain)" ]; then
