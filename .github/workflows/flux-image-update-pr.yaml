@@ -4,6 +4,7 @@ on:
 jobs:
   pull-request:
     runs-on: ubuntu-latest
+    environment: Tom
     if: |
       github.event.ref_type == 'branch' &&
       startsWith(github.event.ref, 'image-automation-')
@@ -17,7 +18,7 @@ jobs:
 
       - name: Create Pull Request
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.FLUX_GITHUB_TOKEN }} # Required as a PR created by secrets.GITHUB_TOKEN would not trigger other workflows
           GITHUB_REPO: ${{ github.repository }}
           GITHUB_REF: ${{ github.ref }}
         run: |
