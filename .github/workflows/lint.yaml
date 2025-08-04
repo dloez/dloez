@@ -16,21 +16,28 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.head_ref }}
+      
+      - name: Get changed YAML files
+        id: changed-yaml-files
+        uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c
+        with:
+          files: |
+            homelab/**/*.yaml
+          files_ignore: |
+            homelab/clusters/tom/flux-system/**
+            homelab/infrastructure/terraform/**
+            homelab/infrastructure/talos/**
+
       - name: Fix YAML document markers
+        if: steps.changed-yaml-files.outputs.any_changed == 'true'
+        env:
+          CHANGED_FILES: ${{ steps.changed-yaml-files.outputs.all_changed_files }}
         run: |
-          # Get changed YAML files in the PR
-          changed_files=$(git diff --name-only origin/main...HEAD | grep -E '\.(yaml|yml)$' | grep '^homelab/' || true)
-          
-          if [ -z "$changed_files" ]; then
-            echo "No YAML files changed in homelab directory"
-            exit 0
-          fi
-          
           echo "Changed YAML files:"
-          echo "$changed_files"
+          echo "$CHANGED_FILES"
           
           chmod +x scripts/add-yaml-markers.sh
-          ./scripts/add-yaml-markers.sh $changed_files
+          ./scripts/add-yaml-markers.sh $CHANGED_FILES
       - name: Commit changes
         run: |
           if [ -n "$(git status --porcelain)" ]; then
