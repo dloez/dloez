@@ -36,8 +36,8 @@ jobs:
           echo "Changed YAML files:"
           echo "$CHANGED_FILES"
           
-          chmod +x scripts/add-yaml-markers.sh
-          ./scripts/add-yaml-markers.sh $CHANGED_FILES
+          chmod +x $GITHUB_WORKSPACE/scripts/add-yaml-markers.sh
+          $GITHUB_WORKSPACE/scripts/add-yaml-markers.sh $CHANGED_FILES
       - name: Commit changes
         run: |
           if [ -n "$(git status --porcelain)" ]; then
