@@ -6,3 +6,4 @@ resources:
   - cf-cluster-issuer.yaml
   - ip-pools.yaml
   - traefik-service.yaml
+  - longhorn-gateway.yaml

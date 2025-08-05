@@ -5,6 +5,19 @@ machine:
       - interface: end0
         addresses:
           - 192.168.1.11/24
+  install:
+    extensions:
+      - image: ghcr.io/siderolabs/iscsi-tools:v0.2.0
+      - image: ghcr.io/siderolabs/util-linux-tools:2.41.1
+  kubelet:
+    extraMounts:
+      - destination: /var/lib/longhorn
+        type: bind
+        source: /var/mnt/persistent-cluster-data
+        options:
+          - bind
+          - rshared
+          - rw
 ---
 apiVersion: v1alpha1
 kind: VolumeConfig

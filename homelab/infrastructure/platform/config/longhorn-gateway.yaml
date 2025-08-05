@@ -1,0 +1,75 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: longhorn-cert
+  namespace: longhorn-system
+spec:
+  secretName: longhorn-tls
+  issuerRef:
+    name: cloudflare-issuer
+    kind: ClusterIssuer
+  dnsNames:
+    - longhorn.dloez.dev
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: longhorn-gateway
+  namespace: longhorn-system
+spec:
+  gatewayClassName: traefik
+  listeners:
+    - name: websecure
+      port: 8443
+      protocol: HTTPS
+      hostname: longhorn.dloez.dev
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: longhorn-tls
+    - name: web
+      port: 8000
+      protocol: HTTP
+      hostname: longhorn.dloez.dev
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: longhorn-https-redirect
+  namespace: longhorn-system
+spec:
+  parentRefs:
+    - name: longhorn-gateway
+      sectionName: web
+  hostnames:
+    - longhorn.dloez.dev
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: longhorn-route
+  namespace: longhorn-system
+spec:
+  parentRefs:
+    - name: longhorn-gateway
+      sectionName: websecure
+  hostnames:
+    - longhorn.dloez.dev
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: longhorn-frontend
+          port: 80
