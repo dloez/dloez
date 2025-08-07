@@ -1,0 +1,169 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: actualbudget
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: actual-data
+  namespace: actualbudget
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: actual-server
+  namespace: actualbudget
+  labels:
+    app: actual-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: actual-server
+  template:
+    metadata:
+      labels:
+        app: actual-server
+    spec:
+      containers:
+        - name: actual-server
+          image: ghcr.io/actualbudget/actual:sha-63604c1-alpine
+          ports:
+            - containerPort: 5006
+              protocol: TCP
+          volumeMounts:
+            - name: actual-data
+              mountPath: /data
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'node src/scripts/health-check.js'
+            initialDelaySeconds: 20
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'node src/scripts/health-check.js'
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '100m'
+            limits:
+              memory: '512Mi'
+              cpu: '500m'
+      volumes:
+        - name: actual-data
+          persistentVolumeClaim:
+            claimName: actual-data
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: actual-server
+  namespace: actualbudget
+  labels:
+    app: actual-server
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5006
+      targetPort: 5006
+      protocol: TCP
+      name: http
+  selector:
+    app: actual-server
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: actualbudget-cert
+  namespace: actualbudget
+spec:
+  secretName: actualbudget-tls
+  issuerRef:
+    name: cloudflare-issuer
+    kind: ClusterIssuer
+  dnsNames:
+    - actualbudget.dloez.dev
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: actualbudget-gateway
+  namespace: actualbudget
+spec:
+  gatewayClassName: traefik
+  listeners:
+    - name: websecure
+      port: 8443
+      protocol: HTTPS
+      hostname: actualbudget.dloez.dev
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: actualbudget-tls
+    - name: web
+      port: 8000
+      protocol: HTTP
+      hostname: actualbudget.dloez.dev
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: actualbudget-https-redirect
+  namespace: actualbudget
+spec:
+  parentRefs:
+    - name: actualbudget-gateway
+      sectionName: web
+  hostnames:
+    - actualbudget.dloez.dev
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: actualbudget-route
+  namespace: actualbudget
+spec:
+  parentRefs:
+    - name: actualbudget-gateway
+      sectionName: websecure
+  hostnames:
+    - actualbudget.dloez.dev
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: actual-server
+          port: 5006
