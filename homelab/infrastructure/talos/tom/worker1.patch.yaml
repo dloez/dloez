@@ -5,13 +5,9 @@ machine:
       - interface: end0
         addresses:
           - 192.168.1.11/24
-  install:
-    extensions:
-      - image: ghcr.io/siderolabs/iscsi-tools:v0.2.0
-      - image: ghcr.io/siderolabs/util-linux-tools:2.41.1
   kubelet:
     extraMounts:
-      - destination: /var/lib/longhorn
+      - destination: /var/mnt/persistent-cluster-data
         type: bind
         source: /var/mnt/persistent-cluster-data
         options:
