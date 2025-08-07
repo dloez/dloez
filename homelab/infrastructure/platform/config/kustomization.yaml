@@ -7,3 +7,4 @@ resources:
   - ip-pools.yaml
   - traefik-service.yaml
   - longhorn-gateway.yaml
+  - longhorn-single-replica-storageclass.yaml
