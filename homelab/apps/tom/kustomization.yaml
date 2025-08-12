@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - pihole.yaml
   - actualbudget.yaml
+  - n8n.yaml
