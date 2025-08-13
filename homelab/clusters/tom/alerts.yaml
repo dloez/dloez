@@ -11,7 +11,7 @@ spec:
   target:
     creationPolicy: Owner
   data:
-    - secretKey: discord-webhook
+    - secretKey: address
       remoteRef:
         key: Discord webhook/password
 ---
