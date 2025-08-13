@@ -1,0 +1,135 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: home-assistant
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: pajikos
+  namespace: home-assistant
+spec:
+  interval: 1m0s
+  url: http://pajikos.github.io/home-assistant-helm-chart
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: home-assistant
+  namespace: home-assistant
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: home-assistant
+      version: 0.3.15
+      sourceRef:
+        kind: HelmRepository
+        name: pajikos
+        namespace: home-assistant
+  values:
+    ingress:
+      enabled: true
+    persistence:
+      enabled: true
+      storageClass: 'longhorn-single-replica'
+      accessModes:
+        - ReadWriteOnce
+      size: 10Gi
+    configuration:
+      enabled: true
+      templateConfig: |-
+        default_config:
+
+        http:
+          use_x_forwarded_for: true
+          trusted_proxies:
+            - 10.244.0.0/16
+            - 10.96.0.0/12
+
+        frontend:
+          themes: !include_dir_merge_named themes
+
+        automation: !include automations.yaml
+        script: !include scripts.yaml
+        scene: !include scenes.yaml
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: home-assistant-cert
+  namespace: home-assistant
+spec:
+  secretName: home-assistant-tls
+  issuerRef:
+    name: cloudflare-issuer
+    kind: ClusterIssuer
+  dnsNames:
+    - homeassistant.dloez.dev
+  privateKey:
+    rotationPolicy: Always
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: home-assistant-gateway
+  namespace: home-assistant
+spec:
+  gatewayClassName: traefik
+  listeners:
+    - name: websecure
+      port: 8443
+      protocol: HTTPS
+      hostname: homeassistant.dloez.dev
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: home-assistant-tls
+    - name: web
+      port: 8000
+      protocol: HTTP
+      hostname: homeassistant.dloez.dev
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: home-assistant-https-redirect
+  namespace: home-assistant
+spec:
+  parentRefs:
+    - name: home-assistant-gateway
+      sectionName: web
+  hostnames:
+    - homeassistant.dloez.dev
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: home-assistant-route
+  namespace: home-assistant
+spec:
+  parentRefs:
+    - name: home-assistant-gateway
+      sectionName: websecure
+  hostnames:
+    - homeassistant.dloez.dev
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: home-assistant
+          port: 8080
