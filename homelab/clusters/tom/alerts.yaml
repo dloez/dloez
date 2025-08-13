@@ -1,0 +1,44 @@
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: discord-webhook
+  namespace: flux-system
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: 1password
+  target:
+    creationPolicy: Owner
+  data:
+    - secretKey: discord-webhook
+      remoteRef:
+        key: Discord webhook/password
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: discord
+  namespace: flux-system
+spec:
+  type: discord
+  secretRef:
+    name: discord-webhook
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: discord
+  namespace: flux-system
+spec:
+  summary: 'cluster addons'
+  eventMetadata:
+    cluster: 'tom'
+  providerRef:
+    name: discord
+  eventSeverity: info
+  eventSources:
+    - kind: GitRepository
+      name: '*'
+    - kind: Kustomization
+      name: '*'
