@@ -40,7 +40,7 @@ spec:
     spec:
       containers:
         - name: actual-server
-          image: ghcr.io/actualbudget/actual:sha-63604c1-alpine
+          image: ghcr.io/actualbudget/actual:sha-2e439aa-alpine
           ports:
             - containerPort: 5006
               protocol: TCP
