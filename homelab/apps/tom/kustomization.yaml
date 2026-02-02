@@ -5,3 +5,4 @@ resources:
   - pihole.yaml
   - actualbudget.yaml
   - n8n.yaml
+  - tandoor.yaml
