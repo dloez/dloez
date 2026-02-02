@@ -46,7 +46,7 @@ spec:
             - name: n8n-data
               mountPath: /home/node/.n8n
         - name: install-npm-packages
-          image: docker.n8n.io/n8nio/n8n:1.106.2
+          image: docker.n8n.io/n8nio/n8n:2.4.8
           command:
             - sh
             - -c
@@ -61,7 +61,7 @@ spec:
               mountPath: /home/node/.n8n
       containers:
         - name: n8n
-          image: docker.n8n.io/n8nio/n8n:1.106.2
+          image: docker.n8n.io/n8nio/n8n:2.4.8
           ports:
             - containerPort: 5678
               protocol: TCP
