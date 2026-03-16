@@ -9,12 +9,14 @@
 # @raycast.icon 📋
 # @raycast.packageName Ghostty
 
-# Check if a Ghostty window with "Tasks" title exists
-WINDOW_EXISTS=$(osascript -e '
+HELPERS="/Users/dloez/Workspace/dloez/raycast-scripts/helpers"
+
+# Check if Tasks windows already exist
+TASKS_EXIST=$(osascript -e '
 try
     tell application "Ghostty"
         repeat with w in windows
-            if name of w is "Tasks" then
+            if name of w is "[Today] Tasks" or name of w is "[Inbox] Tasks" then
                 return true
             end if
         end repeat
@@ -23,27 +25,37 @@ end try
 return false
 ' 2>/dev/null || echo "false")
 
-if [ "$WINDOW_EXISTS" = "true" ]; then
+if [ "$TASKS_EXIST" = "true" ]; then
     osascript -e 'tell application "Ghostty" to activate'
 else
-    # Remember PIDs before
     PIDS_BEFORE=$(pgrep -x ghostty | sort)
 
-    open -na "Ghostty" --args -e /Users/dloez/Workspace/dloez/raycast-scripts/helpers/tdo-wrapper.sh
+    # Launch both windows
+    open -na "Ghostty" --args -e "$HELPERS/tdo-today.sh"
+    open -na "Ghostty" --args -e "$HELPERS/tdo-inbox.sh"
     sleep 0.5
 
-    # Find the new PID
+    # Find new PIDs (first = today, second = inbox)
     PIDS_AFTER=$(pgrep -x ghostty | sort)
-    NEW_PID=$(comm -13 <(echo "$PIDS_BEFORE") <(echo "$PIDS_AFTER"))
+    NEW_PIDS=$(comm -13 <(echo "$PIDS_BEFORE") <(echo "$PIDS_AFTER"))
+    PID_ARRAY=($NEW_PIDS)
 
-    if [ -n "$NEW_PID" ]; then
-        # Position using the new PID
+    if [ ${#PID_ARRAY[@]} -ge 2 ]; then
+        # Today = left half of bottom third
         osascript -e '
         tell application "System Events"
-            set targetPID to '"$NEW_PID"'
-            repeat with p in every process whose unix id is targetPID
+            repeat with p in every process whose unix id is '"${PID_ARRAY[0]}"'
                 set position of window 1 of p to {2560, 970}
-                set size of window 1 of p to {2560, 470}
+                set size of window 1 of p to {1280, 470}
+            end repeat
+        end tell
+        '
+        # Inbox = right half of bottom third
+        osascript -e '
+        tell application "System Events"
+            repeat with p in every process whose unix id is '"${PID_ARRAY[1]}"'
+                set position of window 1 of p to {3840, 970}
+                set size of window 1 of p to {1280, 470}
             end repeat
         end tell
         '
