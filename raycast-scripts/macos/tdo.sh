@@ -10,4 +10,4 @@
 # @raycast.icon ·
 # @raycast.packageName tdo
 
-eval /Users/dloez/.cargo/bin/tdo $1
+eval "$HOME/.cargo/bin/tdo" $1

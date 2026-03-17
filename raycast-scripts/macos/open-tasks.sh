@@ -9,7 +9,8 @@
 # @raycast.icon 📋
 # @raycast.packageName Ghostty
 
-HELPERS="/Users/dloez/Workspace/dloez/raycast-scripts/helpers"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+HELPERS="$SCRIPT_DIR/../general/helpers"
 
 # Check if Tasks windows already exist
 TASKS_EXIST=$(osascript -e '
