@@ -1,7 +1,25 @@
 name: Flux auto image update
 on:
   create:
+  pull_request:
+    types: [closed]
+    branches: [main]
 jobs:
+  cleanup-branch:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'image-automation-')
+    permissions:
+      contents: write
+    steps:
+      - name: Delete branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${{ github.event.pull_request.head.ref }}"
+
   pull-request:
     runs-on: ubuntu-latest
     environment: Tom
