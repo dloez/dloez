@@ -54,7 +54,7 @@ spec:
     spec:
       containers:
         - name: pihole
-          image: docker.io/pihole/pihole:2026.07.0 # {"$imagepolicy": "flux-system:pihole"}
+          image: docker.io/pihole/pihole:2026.07.1 # {"$imagepolicy": "flux-system:pihole"}
           ports:
             - containerPort: 53
               protocol: TCP
