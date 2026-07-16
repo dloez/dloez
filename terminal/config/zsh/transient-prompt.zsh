@@ -1,9 +1,3 @@
-# Transient prompt (powerlevel10k-style) for starship + zsh.
-# After a command runs, collapse its prompt to a minimal arrow to keep
-# scrollback clean. Uses the recursive-edit technique.
-
-# Single line with no leading blank, matching starship's `add_newline = false`,
-# so the prompt keeps the same vertical footprint when it collapses (no jump).
 _transient_prompt='%F{242}❯%f '
 
 zle-line-init() {
@@ -20,11 +14,13 @@ zle-line-init() {
 
   local saved_prompt=$PROMPT
   local saved_rprompt=$RPROMPT
+  print -n $'\e[?2026h\e[?25l' > /dev/tty
   PROMPT=$_transient_prompt
   RPROMPT=''
   zle .reset-prompt
   PROMPT=$saved_prompt
   RPROMPT=$saved_rprompt
+  print -n $'\e[?25h\e[?2026l' > /dev/tty
 
   if (( ret )); then
     zle .send-break

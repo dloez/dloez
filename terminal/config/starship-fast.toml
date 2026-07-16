@@ -1,0 +1,10 @@
+# Fast variant of starship.toml used for the instant first paint of the prompt
+# (see zsh/async-prompt.zsh). Only cheap, filesystem-local modules — anything
+# that shells out (git, language runtimes) is filled in asynchronously by the
+# full config. Keep the visual settings here in sync with starship.toml.
+
+add_newline = true
+command_timeout = 500
+
+# Instant subset of the default format: current dir + prompt character.
+format = "$directory$line_break$character"

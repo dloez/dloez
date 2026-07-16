@@ -1,7 +1,20 @@
 # terminal
 
-Portable zsh setup — starship prompt, autosuggestions, syntax highlighting, and
-a collapsing (transient) prompt. No oh-my-zsh, no brew required.
+Portable zsh setup — starship prompt, autosuggestions, syntax highlighting, a
+collapsing (transient) prompt, and async prompt rendering. No oh-my-zsh, no
+brew required.
+
+## Async prompt
+
+starship's stock init re-runs starship synchronously on every prompt draw
+(~40ms in any git repo, 100ms+ on cold caches). `zsh/async-prompt.zsh` splits
+that into an instant git-less first paint (`starship-fast.toml`, ~5-15ms) and a
+background full render that swaps git info in via `zle reset-prompt` — same
+layout, no jump, and the shell is typeable immediately.
+
+Measure before/after with `zsh terminal/benchmark.sh <label>` (requires
+[hyperfine](https://github.com/sharkdp/hyperfine)); results land in
+`terminal/bench-results/<label>.md`.
 
 ## Bootstrap a new machine
 
@@ -35,5 +48,8 @@ and untracked.
 |-----------|--------------|
 | `config/zshrc` | `~/.zshrc` |
 | `config/starship.toml` | `~/.config/starship.toml` |
+| `config/starship-fast.toml` | `~/.config/starship-fast.toml` |
+| `config/zsh/cursor.zsh` | `~/.config/zsh/cursor.zsh` |
 | `config/zsh/perf.zsh` | `~/.config/zsh/perf.zsh` |
+| `config/zsh/async-prompt.zsh` | `~/.config/zsh/async-prompt.zsh` |
 | `config/zsh/transient-prompt.zsh` | `~/.config/zsh/transient-prompt.zsh` |
