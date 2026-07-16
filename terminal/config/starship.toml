@@ -1,0 +1,15 @@
+# Starship configuration
+
+# Blank line above the active prompt for breathing room. The transient prompt
+# (see ~/.config/zsh/transient-prompt.zsh) has no leading blank, so this line
+# is removed when a command is submitted and the prompt collapses.
+add_newline = true
+
+# Never let the prompt block longer than this waiting on a command (e.g. git).
+# If git status exceeds it, starship draws the prompt without that info rather
+# than hanging. Lower = snappier worst case; higher = more complete git info.
+command_timeout = 500
+
+[git_status]
+# Skip scanning submodules — a common source of slow `git status` in big repos.
+ignore_submodules = true

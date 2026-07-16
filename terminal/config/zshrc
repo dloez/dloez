@@ -1,0 +1,18 @@
+export PATH="$HOME/.local/bin:$PATH"
+
+# Starship prompt
+eval "$(starship init zsh)"
+
+# --- managed by dloez/dotfiles (terminal/install.sh) ---
+PLUGIN_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
+ZSH_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
+
+# Plugin performance tuning (must be sourced BEFORE the plugins)
+[ -f "$ZSH_CONFIG/perf.zsh" ] && source "$ZSH_CONFIG/perf.zsh"
+
+source "$PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
+# syntax-highlighting must be sourced last per its documentation.
+source "$PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+
+# Transient prompt (collapse a command's prompt after it runs)
+[ -f "$ZSH_CONFIG/transient-prompt.zsh" ] && source "$ZSH_CONFIG/transient-prompt.zsh"
