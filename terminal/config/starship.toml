@@ -1,15 +1,17 @@
-# Starship configuration
-
-# Blank line above the active prompt for breathing room. The transient prompt
-# (see ~/.config/zsh/transient-prompt.zsh) has no leading blank, so this line
-# is removed when a command is submitted and the prompt collapses.
 add_newline = true
-
-# This config renders in the background (see zsh/async-prompt.zsh), so a slow
-# git never blocks the prompt — a generous timeout just means complete git
-# info arrives slightly later instead of being dropped with a WARN.
 command_timeout = 2000
 
 [git_status]
-# Skip scanning submodules — a common source of slow `git status` in big repos.
 ignore_submodules = true
+format = '([$ahead_behind$stashed$conflicted$staged$modified$untracked$renamed$deleted]($style))'
+up_to_date = ''
+ahead = '[⇡$count ](76)'
+behind = '[⇣$count ](76)'
+diverged = '[⇕⇡$ahead_count⇣$behind_count ](76)'
+stashed = '[*$count ](76)'
+conflicted = '[~$count ](196)'
+staged = '[+$count ](178)'
+modified = '[!$count ](178)'
+untracked = '[?$count ](39)'
+renamed = '[»$count ](178)'
+deleted = '[✘$count ](196)'

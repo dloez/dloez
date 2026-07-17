@@ -3,6 +3,11 @@ export PATH="$HOME/.local/bin:$PATH"
 PLUGIN_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 ZSH_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=100000
+SAVEHIST=100000
+setopt inc_append_history share_history hist_ignore_all_dups hist_ignore_space hist_reduce_blanks extended_history
+
 eval "$(starship init zsh)"
 
 [ -f "$ZSH_CONFIG/async-prompt.zsh" ] && source "$ZSH_CONFIG/async-prompt.zsh"
