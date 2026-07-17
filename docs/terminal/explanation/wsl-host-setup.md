@@ -9,9 +9,9 @@ The prompt is drawn by the terminal emulator, which on WSL is a Windows applicat
 ## What it does
 
 - **Installs JetBrainsMono Nerd Font per-user.** Fonts are copied into `%LOCALAPPDATA%\Microsoft\Windows\Fonts` and registered under `HKCU`. A per-user install needs **no admin rights and triggers no UAC prompt** — a machine-wide install would. It downloads the font from the latest `ryanoasis/nerd-fonts` release.
-- **Points Windows Terminal's WSL profile at the font.** It finds the WSL profile(s) in `settings.json` (by `source` of `Microsoft.WSL` / `Windows.Terminal.Wsl`, or a name like `*Ubuntu*`), falling back to `profiles.defaults`, and sets `font.face`. It backs up `settings.json` before writing.
+- **Configures Windows Terminal's WSL profile.** It finds the WSL profile(s) in `settings.json` (by `source` of `Microsoft.WSL` / `Windows.Terminal.Wsl`, or a name like `*Ubuntu*`), falling back to `profiles.defaults`, and sets `font.face` (JetBrainsMono Nerd Font), `font.size` (`11.5`), and `colorScheme` (`Dark+`, a built-in Windows Terminal scheme, so it need not be defined in `settings.json`). It backs up `settings.json` before writing.
 
-Both halves are **idempotent**: the font is skipped if already present, the profile edit is skipped if the face is already set.
+Both halves are **idempotent**: the font is skipped if already present, and the profile edit is skipped when the face, size, and colour scheme already match.
 
 ## Interop constraints that shaped it
 

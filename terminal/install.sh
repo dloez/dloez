@@ -179,6 +179,8 @@ $out = @()
 $ok  = $true
 try {
     $face  = 'JetBrainsMono Nerd Font'
+    $size  = 11.5
+    $scheme = 'Dark+'
     $glob  = 'JetBrainsMonoNerdFont*.ttf'
     $asset = 'JetBrainsMono.zip'
 
@@ -234,17 +236,29 @@ try {
                 $p.font | Add-Member -NotePropertyName face -NotePropertyValue $face
                 $changed = $true
             }
+            if ($p.font.PSObject.Properties['size']) {
+                if ($p.font.size -ne $size) { $p.font.size = $size; $changed = $true }
+            } else {
+                $p.font | Add-Member -NotePropertyName size -NotePropertyValue $size
+                $changed = $true
+            }
+            if ($p.PSObject.Properties['colorScheme']) {
+                if ($p.colorScheme -ne $scheme) { $p.colorScheme = $scheme; $changed = $true }
+            } else {
+                $p | Add-Member -NotePropertyName colorScheme -NotePropertyValue $scheme
+                $changed = $true
+            }
         }
 
         if (-not $changed) {
-            $out += "terminal: font already set on $scope"
+            $out += "terminal: profile already set on $scope"
         } else {
             $bak = $settings + '.bak.' + (Get-Date -Format 'yyyyMMddHHmmss')
             Copy-Item -Path $settings -Destination $bak -Force
             $ser = $json | ConvertTo-Json -Depth 32
             $ser = [regex]::Replace($ser, '[^\x00-\x7F]', { param($m) '\u{0:x4}' -f [int][char]$m.Value })
             [System.IO.File]::WriteAllText($settings, $ser, (New-Object System.Text.UTF8Encoding($false)))
-            $out += "terminal: font set on $scope (backup: $([System.IO.Path]::GetFileName($bak)))"
+            $out += "terminal: profile set on $scope (backup: $([System.IO.Path]::GetFileName($bak)))"
         }
     }
 } catch {
