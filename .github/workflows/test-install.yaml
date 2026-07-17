@@ -1,0 +1,41 @@
+name: Test terminal install
+
+on:
+  push:
+    paths:
+      - 'terminal/**'
+      - '.github/workflows/test-install.yaml'
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Shellcheck
+        run: shellcheck --severity=warning terminal/install.sh terminal/test.sh terminal/verify.sh
+
+  ubuntu-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run install.sh in a clean ubuntu:24.04 container
+        run: sh terminal/test.sh
+
+  macos-test:
+    if: github.event_name != 'push'
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run install.sh on the runner
+        run: sh terminal/install.sh
+      - name: Verify
+        run: sh terminal/verify.sh
