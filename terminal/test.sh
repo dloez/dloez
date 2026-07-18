@@ -18,8 +18,8 @@ echo "-- first install --"
 sh /repo/terminal/install.sh
 echo "-- verify --"
 sh /repo/terminal/verify.sh /repo
-echo "-- install with skills --"
-INSTALL_CLAUDE_SKILLS=1 sh /repo/terminal/install.sh
-echo "-- verify skills --"
-INSTALL_CLAUDE_SKILLS=1 sh /repo/terminal/verify.sh /repo
+echo "-- install with claude setup --"
+INSTALL_CLAUDE=1 sh /repo/terminal/install.sh
+echo "-- verify claude setup --"
+INSTALL_CLAUDE=1 sh /repo/terminal/verify.sh /repo
 INNER

@@ -41,6 +41,8 @@ check "zsh installed"      command -v zsh
 check "starship installed" test -x "$HOME/.local/bin/starship"
 check "fzf installed"      test -x "$HOME/.local/bin/fzf"
 check "herdr installed"    test -x "$HOME/.local/bin/herdr"
+check "nvim installed"     test -x "$HOME/.local/bin/nvim"
+check "nvim config present" test -d "$HOME/.config/nvim"
 
 for f in .zshrc \
          .config/starship.toml \
@@ -58,12 +60,20 @@ done
 check "plugin zsh-autosuggestions"     test -d "$HOME/.local/share/zsh/plugins/zsh-autosuggestions/.git"
 check "plugin zsh-syntax-highlighting" test -d "$HOME/.local/share/zsh/plugins/zsh-syntax-highlighting/.git"
 
-if [ "${INSTALL_CLAUDE_SKILLS:-}" = "1" ] && [ -d "$REPO/.claude/skills" ]; then
-  for d in "$REPO"/.claude/skills/*/; do
-    [ -d "$d" ] || continue
-    s=$(basename "$d")
-    check "skill symlink .claude/skills/$s" link_into_repo "$HOME/.claude/skills/$s"
-  done
+if [ "${INSTALL_CLAUDE:-}" = "1" ]; then
+  if [ -d "$REPO/.claude/skills" ]; then
+    skills_list="$REPO/.claude/skills/essential-skills.txt"
+    if [ -f "$skills_list" ]; then
+      tmp_skills=$(mktemp)
+      sed -e 's/#.*//' -e 's/[[:space:]]//g' "$skills_list" | grep -v '^$' >"$tmp_skills" || true
+      while IFS= read -r s; do
+        check "skill symlink .claude/skills/$s" link_into_repo "$HOME/.claude/skills/$s"
+      done <"$tmp_skills"
+      rm -f "$tmp_skills"
+    fi
+  fi
+  check "nvim learning plugin present"  test -f "$HOME/.config/nvim/plugin/learning.lua"
+  check "learning loop enabled"         test -f "$HOME/.config/nvim/.learning-enabled"
 fi
 
 zsh_path=$(command -v zsh || echo zsh)

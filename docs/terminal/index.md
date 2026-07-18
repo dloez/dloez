@@ -10,7 +10,8 @@ Portable zsh setup that bootstraps a fresh Linux, macOS, or WSL machine with one
 - **zsh completion** — `compinit` with a cached dump, menu selection, case-insensitive matching, and colored candidates.
 - **History-substring search** — `↑`/`↓` walk only the history entries matching the typed prefix.
 - **herdr** — the mouse-first terminal multiplexer for AI coding agents (binary in `~/.local/bin`, config symlinked from the repo).
-- **Optional Claude Code skills** — on request (install prompt or `INSTALL_CLAUDE_SKILLS=1`), symlinks this repo's `.claude/skills/` into `~/.claude/skills/`. See [Layout and testing](reference/layout-and-testing.md).
+- **Neovim + kickstart** — installs a recent Neovim into `~/.local` and clones the personal kickstart fork (`dloez/kickstart.nvim`) into `~/.config/nvim` (if absent) as part of the default setup. See [Layout and testing](reference/layout-and-testing.md).
+- **Optional Claude Code setup** — on request (install prompt or `INSTALL_CLAUDE=1`), symlinks the essential skills from `.claude/skills/essential-skills.txt` into `~/.claude/skills/` and enables the nvim learning loop (creates the `.learning-enabled` marker the fork's keylogger watches for). See [Layout and testing](reference/layout-and-testing.md).
 
 ## Design stance
 

@@ -21,12 +21,21 @@
 
 `herdr` follows the same split: only its `config.toml` is symlinked; the binary is downloaded to `~/.local/bin/herdr` via the official `herdr.dev/install.sh` (with `HERDR_INSTALL_DIR` pinned to `~/.local/bin`), and herdr's own runtime files (sockets, logs, `session.json`) live unmanaged alongside the linked config in `~/.config/herdr/`.
 
-## Claude Code skills (opt-in)
+## Neovim + kickstart
 
-The installer can also symlink each `.claude/skills/<name>` directory in this repo into `~/.claude/skills/<name>`, reusing the same individual-symlink, back-up-on-conflict logic as the config files. This is **opt-in**: `install.sh` prompts once (reading from `/dev/tty`), or links without prompting when `INSTALL_CLAUDE_SKILLS=1` is set; with no tty and no env var it is skipped. Because the links point back into the checkout, a `git pull` there updates the skills in place.
+As part of the default setup, the installer downloads a recent Neovim release into `~/.local` (symlinking `~/.local/bin/nvim`, skipped if a nvim >= 0.11 is already present) and clones the personal kickstart fork [`dloez/kickstart.nvim`](https://github.com/dloez/kickstart.nvim) into `~/.config/nvim` **only if that directory is absent** (an existing config is left untouched).
 
-| Repo dir | Symlinked to |
-|----------|--------------|
+The fork carries the customizations directly, so nothing is layered in at install time. `init.lua` stays byte-for-byte upstream and changes live in `after/plugin/*.lua` (overrides) and `lua/custom/plugins/*.lua` (new plugins), so `git merge upstream/master` never conflicts. The keylogger (`plugin/learning.lua`) and journal template ship in the fork too, dormant until the learning loop is enabled (below).
+
+## Claude Code setup (opt-in)
+
+On request the installer wires up the Claude Code layer. This is **opt-in**: `install.sh` prompts once (reading from `/dev/tty`), or runs without prompting when `INSTALL_CLAUDE=1` is set; with no tty and no env var it is skipped. It covers two things, and grows as more Claude tooling is added:
+
+- **Skills** — symlinks each skill listed in `.claude/skills/essential-skills.txt` (one directory name per line) into `~/.claude/skills/<name>`, reusing the individual-symlink, back-up-on-conflict logic of the config files. Edit that list to change which skills are promoted system-wide. Because the links point back into the checkout, a `git pull` there updates them in place.
+- **nvim learning loop** — creates the `~/.config/nvim/.learning-enabled` marker, which activates the keylogger + journal bootstrap that already ship in the nvim fork. `LEARNING.md` is the private, device-local journal (bootstrapped from `LEARNING.template.md` on first launch, git-ignored by the fork) and is never committed or synced.
+
+| Repo path | Symlinked to |
+|-----------|--------------|
 | `.claude/skills/<name>` | `~/.claude/skills/<name>` |
 
 ## Commands
@@ -40,8 +49,8 @@ Run from the repo root.
 | Lint the shell scripts | `shellcheck --severity=warning terminal/install.sh terminal/test.sh terminal/verify.sh` |
 | Benchmark the prompt | `zsh terminal/benchmark.sh <label>` |
 
-- **`test.sh`** runs `install.sh` in a clean `ubuntu:24.04` Docker container, then runs `verify.sh` against it, then repeats both with `INSTALL_CLAUDE_SKILLS=1` to exercise the skills symlinks. Requires Docker. Accepts an optional image argument (defaults to `ubuntu:24.04`).
-- **`verify.sh`** asserts deps present, starship + fzf + herdr + plugins + all symlinks in place, zsh is the default shell, the config sources cleanly, and that a **second** `install.sh` run is idempotent (reuses the existing starship). When `INSTALL_CLAUDE_SKILLS=1`, it also asserts the `~/.claude/skills/<name>` symlinks. `[repo]` defaults to the parent of the script.
+- **`test.sh`** runs `install.sh` in a clean `ubuntu:24.04` Docker container (the default run installs Neovim and clones the kickstart fork), then runs `verify.sh` against it, then repeats both with `INSTALL_CLAUDE=1` to link the skills and enable the learning loop. Requires Docker. Accepts an optional image argument (defaults to `ubuntu:24.04`).
+- **`verify.sh`** asserts deps present, starship + fzf + herdr + nvim + kickstart config + plugins + all symlinks in place, zsh is the default shell, the config sources cleanly, and that a **second** `install.sh` run is idempotent (reuses the existing starship). When `INSTALL_CLAUDE=1`, it also asserts the `~/.claude/skills/<name>` symlinks for each skill in `essential-skills.txt`, plus the learning plugin in the clone and the `.learning-enabled` marker. `[repo]` defaults to the parent of the script.
 - **`benchmark.sh`** needs [hyperfine](https://github.com/sharkdp/hyperfine). Writes to `terminal/bench-results/<label>.md`, which is gitignored. See [Async prompt design](../explanation/async-prompt.md) for what it measures.
 
 ## CI

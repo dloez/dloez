@@ -7,6 +7,9 @@ MANAGED_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/dloez"
 PLUGIN_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
 FZF_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/fzf"
+NVIM_DIST="${XDG_DATA_HOME:-$HOME/.local/share}/nvim-dist"
+KICKSTART_URL="https://github.com/dloez/kickstart.nvim.git"
+NVIM_MIN_MINOR=11
 
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -187,6 +190,52 @@ install_herdr() {
   fi
 }
 
+nvim_recent_enough() {
+  command -v nvim >/dev/null 2>&1 || return 1
+  ver=$(nvim --version 2>/dev/null | sed -n '1s/^NVIM v\([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p')
+  [ -n "$ver" ] || return 1
+  nv_major=${ver%%.*}
+  nv_minor=${ver#*.}
+  [ "$nv_major" -gt 0 ] && return 0
+  [ "$nv_minor" -ge "$NVIM_MIN_MINOR" ]
+}
+
+install_nvim() {
+  if nvim_recent_enough; then
+    info "nvim already installed ($(command -v nvim))"
+    return 0
+  fi
+  case "$(uname -s)" in
+    Linux) nv_os=linux ;;
+    Darwin) nv_os=macos ;;
+    *) warn "no automatic Neovim install for this OS — install Neovim >= 0.$NVIM_MIN_MINOR manually"; return 0 ;;
+  esac
+  case "$(uname -m)" in
+    x86_64 | amd64) nv_arch=x86_64 ;;
+    arm64 | aarch64) nv_arch=arm64 ;;
+    *) warn "no automatic Neovim install for this arch — install Neovim >= 0.$NVIM_MIN_MINOR manually"; return 0 ;;
+  esac
+  nv_asset="nvim-${nv_os}-${nv_arch}.tar.gz"
+  info "Installing Neovim ($nv_asset)"
+  mkdir -p "$HOME/.local/bin" "$NVIM_DIST"
+  nv_log=$(mktemp)
+  nv_tgz=$(mktemp)
+  if curl -fsSL "https://github.com/neovim/neovim/releases/latest/download/$nv_asset" -o "$nv_tgz" 2>"$nv_log" \
+     && tar -xzf "$nv_tgz" -C "$NVIM_DIST" --strip-components=1 2>>"$nv_log"; then
+    rm -f "$nv_log" "$nv_tgz"
+  else
+    err "nvim install failed:"
+    cat "$nv_log" >&2
+    rm -f "$nv_log" "$nv_tgz"
+    exit 1
+  fi
+  if [ "$nv_os" = macos ]; then
+    xattr -c "$NVIM_DIST/bin/nvim" 2>/dev/null || true
+  fi
+  ln -sf "$NVIM_DIST/bin/nvim" "$HOME/.local/bin/nvim"
+  info "linked: .local/bin/nvim"
+}
+
 setup_windows() {
   grep -qi microsoft /proc/version 2>/dev/null || return 0
   if ! command -v powershell.exe >/dev/null 2>&1; then
@@ -331,27 +380,61 @@ PS
   rm -f "$stf" "$ps1"
 }
 
+essential_skills() {
+  sed -e 's/#.*//' -e 's/[[:space:]]//g' "$1" | grep -v '^$' || true
+}
+
 link_skills() {
   skills_src="$REPO_ROOT/.claude/skills"
+  skills_list="$skills_src/essential-skills.txt"
   [ -d "$skills_src" ] || return 0
-  info "Linking Claude Code skills into ~/.claude/skills"
-  for skill in "$skills_src"/*/; do
-    [ -d "$skill" ] || continue
-    link_file "${skill%/}" "$HOME/.claude/skills/$(basename "$skill")"
+  if [ ! -f "$skills_list" ]; then
+    warn "essential-skills.txt not found; skipping skill links"
+    return 0
+  fi
+  info "Linking essential Claude Code skills into ~/.claude/skills"
+  essential_skills "$skills_list" | while IFS= read -r name; do
+    skill="$skills_src/$name"
+    if [ -d "$skill" ]; then
+      link_file "$skill" "$HOME/.claude/skills/$name"
+    else
+      warn "  essential skill '$name' not found in $skills_src (skipping)"
+    fi
   done
 }
 
-setup_skills() {
-  case "${INSTALL_CLAUDE_SKILLS:-ask}" in
+clone_kickstart() {
+  nvim_cfg="$CONFIG_HOME/nvim"
+  if [ -e "$nvim_cfg" ]; then
+    info "nvim config present at ${nvim_cfg#"$HOME"/} — leaving it untouched"
+    return 0
+  fi
+  info "Cloning kickstart.nvim into ${nvim_cfg#"$HOME"/}"
+  git clone --quiet "$KICKSTART_URL" "$nvim_cfg" || warn "kickstart.nvim clone failed"
+}
+
+enable_learning_loop() {
+  nvim_cfg="$CONFIG_HOME/nvim"
+  if [ ! -d "$nvim_cfg" ]; then
+    warn "no nvim config at ${nvim_cfg#"$HOME"/} — skipping learning loop"
+    return 0
+  fi
+  info "Enabling the nvim learning loop"
+  touch "$nvim_cfg/.learning-enabled"
+}
+
+setup_claude() {
+  case "${INSTALL_CLAUDE:-ask}" in
     1 | y | Y | yes | YES | true | TRUE)
       link_skills
+      enable_learning_loop
       ;;
     ask)
       if (exec </dev/tty) 2>/dev/null; then
-        printf '\033[1;34m==>\033[0m Link Claude Code skills into ~/.claude/skills? [y/N] ' >/dev/tty
+        printf '\033[1;34m==>\033[0m Set up Claude Code (skills + nvim learning loop)? [y/N] ' >/dev/tty
         read -r reply </dev/tty || reply=""
         case "$reply" in
-          y | Y | yes | YES) link_skills ;;
+          y | Y | yes | YES) link_skills; enable_learning_loop ;;
         esac
       fi
       ;;
@@ -396,6 +479,10 @@ install_fzf
 
 install_herdr
 
+install_nvim
+
+clone_kickstart
+
 info "Linking config files"
 link_file "$CONFIG_DIR/zshrc"                     "$HOME/.zshrc"
 link_file "$CONFIG_DIR/starship.toml"             "$CONFIG_HOME/starship.toml"
@@ -412,6 +499,6 @@ set_default_shell
 
 setup_windows
 
-setup_skills
+setup_claude
 
 info "Done. Restart your shell or run: exec zsh"
