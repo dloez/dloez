@@ -6,6 +6,7 @@ Portable zsh setup that bootstraps a fresh Linux, macOS, or WSL machine with one
 - **zsh-autosuggestions** + **zsh-syntax-highlighting** plugins.
 - A collapsing **transient prompt** — past prompts shrink to a bare `❯`.
 - **Async prompt rendering** — an instant git-less first paint, then git info swapped in from a background render.
+- **Optional Claude Code skills** — on request (install prompt or `INSTALL_CLAUDE_SKILLS=1`), symlinks this repo's `.claude/skills/` into `~/.claude/skills/`. See [Layout and testing](reference/layout-and-testing.md).
 
 ## Design stance
 

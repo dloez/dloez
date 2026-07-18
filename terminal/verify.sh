@@ -53,6 +53,14 @@ done
 check "plugin zsh-autosuggestions"     test -d "$HOME/.local/share/zsh/plugins/zsh-autosuggestions/.git"
 check "plugin zsh-syntax-highlighting" test -d "$HOME/.local/share/zsh/plugins/zsh-syntax-highlighting/.git"
 
+if [ "${INSTALL_CLAUDE_SKILLS:-}" = "1" ] && [ -d "$REPO/.claude/skills" ]; then
+  for d in "$REPO"/.claude/skills/*/; do
+    [ -d "$d" ] || continue
+    s=$(basename "$d")
+    check "skill symlink .claude/skills/$s" link_into_repo "$HOME/.claude/skills/$s"
+  done
+fi
+
 zsh_path=$(command -v zsh || echo zsh)
 check "default shell is zsh" test "$(current_shell)" = "$zsh_path"
 check "zsh sources config cleanly" zsh -i -c 'command -v starship >/dev/null'

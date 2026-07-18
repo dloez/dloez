@@ -14,6 +14,14 @@
 | `config/zsh/async-prompt.zsh` | `~/.config/zsh/async-prompt.zsh` |
 | `config/zsh/transient-prompt.zsh` | `~/.config/zsh/transient-prompt.zsh` |
 
+## Claude Code skills (opt-in)
+
+The installer can also symlink each `.claude/skills/<name>` directory in this repo into `~/.claude/skills/<name>`, reusing the same individual-symlink, back-up-on-conflict logic as the config files. This is **opt-in**: `install.sh` prompts once (reading from `/dev/tty`), or links without prompting when `INSTALL_CLAUDE_SKILLS=1` is set; with no tty and no env var it is skipped. Because the links point back into the checkout, a `git pull` there updates the skills in place.
+
+| Repo dir | Symlinked to |
+|----------|--------------|
+| `.claude/skills/<name>` | `~/.claude/skills/<name>` |
+
 ## Commands
 
 Run from the repo root.
@@ -25,8 +33,8 @@ Run from the repo root.
 | Lint the shell scripts | `shellcheck --severity=warning terminal/install.sh terminal/test.sh terminal/verify.sh` |
 | Benchmark the prompt | `zsh terminal/benchmark.sh <label>` |
 
-- **`test.sh`** runs `install.sh` in a clean `ubuntu:24.04` Docker container, then runs `verify.sh` against it. Requires Docker. Accepts an optional image argument (defaults to `ubuntu:24.04`).
-- **`verify.sh`** asserts deps present, starship + plugins + all symlinks in place, zsh is the default shell, the config sources cleanly, and that a **second** `install.sh` run is idempotent (reuses the existing starship). `[repo]` defaults to the parent of the script.
+- **`test.sh`** runs `install.sh` in a clean `ubuntu:24.04` Docker container, then runs `verify.sh` against it, then repeats both with `INSTALL_CLAUDE_SKILLS=1` to exercise the skills symlinks. Requires Docker. Accepts an optional image argument (defaults to `ubuntu:24.04`).
+- **`verify.sh`** asserts deps present, starship + plugins + all symlinks in place, zsh is the default shell, the config sources cleanly, and that a **second** `install.sh` run is idempotent (reuses the existing starship). When `INSTALL_CLAUDE_SKILLS=1`, it also asserts the `~/.claude/skills/<name>` symlinks. `[repo]` defaults to the parent of the script.
 - **`benchmark.sh`** needs [hyperfine](https://github.com/sharkdp/hyperfine). Writes to `terminal/bench-results/<label>.md`, which is gitignored. See [Async prompt design](../explanation/async-prompt.md) for what it measures.
 
 ## CI

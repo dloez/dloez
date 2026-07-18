@@ -23,6 +23,7 @@ Set up the full zsh environment on a fresh Linux, macOS, or WSL machine with one
    4. Symlinks each config file into place, backing up any pre-existing real file to `<file>.bak.<timestamp>`. See the [symlink map](../reference/layout-and-testing.md).
    5. Sets zsh as the default login shell (`chsh`), if it isn't already.
    6. On WSL, configures the font and Windows Terminal on the host — see [WSL host setup](../explanation/wsl-host-setup.md).
+   7. Asks whether to link this repo's Claude Code skills into `~/.claude/skills` (opt-in). Answer `y` at the prompt, or set `INSTALL_CLAUDE_SKILLS=1` to link them without prompting. Skipped silently when there is no terminal to prompt on. See the [skills symlink map](../reference/layout-and-testing.md).
 
 2. Restart your shell to pick up the new setup:
 

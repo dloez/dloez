@@ -166,15 +166,15 @@ setup_windows() {
     return 0
   fi
 
-  ps1="$wintmp_u/dloez-wt-setup.$$.ps1"
-  stf="$wintmp_u/dloez-wt-status.$$"
+  ps1="$wintmp_u/dotfiles-wt-setup.$$.ps1"
+  stf="$wintmp_u/dotfiles-wt-status.$$"
   : >"$stf"
   cat >"$ps1" <<'PS'
 $ErrorActionPreference = 'Stop'
 $ProgressPreference    = 'SilentlyContinue'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$sp  = $env:DLOEZ_STATUS
+$sp  = $env:DOTFILES_STATUS
 $out = @()
 $ok  = $true
 try {
@@ -188,7 +188,7 @@ try {
     if (@(Get-ChildItem -Path $fontDirs -Filter $glob -ErrorAction SilentlyContinue).Count -gt 0) {
         $out += 'font: already installed'
     } else {
-        $rel = Invoke-RestMethod -Uri 'https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest' -Headers @{ 'User-Agent' = 'dloez-dotfiles' }
+        $rel = Invoke-RestMethod -Uri 'https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest' -Headers @{ 'User-Agent' = 'dotfiles' }
         $url = ($rel.assets | Where-Object { $_.name -eq $asset }).browser_download_url
         if (-not $url) { throw "could not find $asset in the latest nerd-fonts release" }
         $tmp = Join-Path $env:TEMP ('nf-jbm-' + [guid]::NewGuid().ToString('N'))
@@ -270,7 +270,7 @@ if (-not $ok) { exit 1 }
 PS
   ps1_w=$(wslpath -w "$ps1")
 
-  if ( cd "$ps_dir" && DLOEZ_STATUS="$stf" WSLENV="DLOEZ_STATUS/p${WSLENV:+:$WSLENV}" powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$ps1_w" ) >/dev/null 2>&1
+  if ( cd "$ps_dir" && DOTFILES_STATUS="$stf" WSLENV="DOTFILES_STATUS/p${WSLENV:+:$WSLENV}" powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$ps1_w" ) >/dev/null 2>&1
   then
     if [ -s "$stf" ]; then
       while IFS= read -r line || [ -n "$line" ]; do
@@ -288,6 +288,33 @@ PS
     fi
   fi
   rm -f "$stf" "$ps1"
+}
+
+link_skills() {
+  skills_src="$REPO_ROOT/.claude/skills"
+  [ -d "$skills_src" ] || return 0
+  info "Linking Claude Code skills into ~/.claude/skills"
+  for skill in "$skills_src"/*/; do
+    [ -d "$skill" ] || continue
+    link_file "${skill%/}" "$HOME/.claude/skills/$(basename "$skill")"
+  done
+}
+
+setup_skills() {
+  case "${INSTALL_CLAUDE_SKILLS:-ask}" in
+    1 | y | Y | yes | YES | true | TRUE)
+      link_skills
+      ;;
+    ask)
+      if (exec </dev/tty) 2>/dev/null; then
+        printf '\033[1;34m==>\033[0m Link Claude Code skills into ~/.claude/skills? [y/N] ' >/dev/tty
+        read -r reply </dev/tty || reply=""
+        case "$reply" in
+          y | Y | yes | YES) link_skills ;;
+        esac
+      fi
+      ;;
+  esac
 }
 
 ensure_deps
@@ -336,5 +363,7 @@ link_file "$CONFIG_DIR/zsh/transient-prompt.zsh"  "$CONFIG_HOME/zsh/transient-pr
 set_default_shell
 
 setup_windows
+
+setup_skills
 
 info "Done. Restart your shell or run: exec zsh"

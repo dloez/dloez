@@ -18,7 +18,7 @@ Both halves are **idempotent**: the font is skipped if already present, and the 
 WSL↔Windows interop is narrow and quoting-hostile, which drove three deliberate choices:
 
 - **A temp `.ps1` run with `-File`, not `-Command`.** Piping a script body over stdin or `-Command` through interop is fragile — quoting and encoding mangle it. The installer writes the PowerShell to a temp `.ps1` on the Windows temp dir, resolves its Windows path with `wslpath -w`, and runs `powershell.exe -NoProfile -ExecutionPolicy Bypass -File <path>`. A real file on the C: drive is read natively by PowerShell with no quoting surprises.
-- **Status returned through a file, not stdout.** Capturing PowerShell's stdout across the boundary is unreliable and gets mixed with other output. Instead the script writes its status lines to a file on the Windows temp dir; the path is handed to it in the `DLOEZ_STATUS` env var, exported across the boundary via `WSLENV=...DLOEZ_STATUS/p` (the `/p` flag translates the path between Linux and Windows form). The Linux side then reads that file back deterministically.
+- **Status returned through a file, not stdout.** Capturing PowerShell's stdout across the boundary is unreliable and gets mixed with other output. Instead the script writes its status lines to a file on the Windows temp dir; the path is handed to it in the `DOTFILES_STATUS` env var, exported across the boundary via `WSLENV=...DOTFILES_STATUS/p` (the `/p` flag translates the path between Linux and Windows form). The Linux side then reads that file back deterministically.
 - **Non-ASCII escaped on write.** `settings.json` is re-serialized with every non-ASCII byte escaped to `\uXXXX` before writing, so the edit never corrupts the file's encoding.
 
 ## Fails soft, never aborts
