@@ -5,7 +5,7 @@ description: Create a structured implementation plan broken into vertical-slice 
 
 # /make-plan
 
-Convert resolved context into a vertical-slice plan. **Never ask the user mid-flow** — that's `/discover`'s job. Anything you can't resolve from a discovery doc, the codebase, the docs, or your own technical judgment goes in the plan's **Open questions — delegated to /discover** section, never in a chat reply.
+Convert resolved context into a vertical-slice plan. **Never ask the user mid-flow** — that's `/scope`'s job. Anything you can't resolve from a discovery doc, the codebase, the docs, or your own technical judgment goes in the plan's **Open questions — delegated to /scope** section, never in a chat reply.
 
 ## Process
 
@@ -15,7 +15,7 @@ Convert resolved context into a vertical-slice plan. **Never ask the user mid-fl
 
 3. **Identify surfaces in scope** — Kustomizations/HelmReleases/manifests, reconciliation & dependency ordering, secrets & config, ingress/DNS, shell scripts/dotfiles, idempotency & rollback, host/OS portability. List in Context.
 
-4. **Blind-spot sweep.** Walk `/discover`'s anchor checklist (scope edges, manifests/apps changed, reconciliation & dependency ordering, secrets & config, ingress/DNS, reuse, idempotency & rollback, host/OS portability, observability). Resolve each via discovery doc → code/docs → your technical judgment. Product decisions still unresolved → list under "Open questions — delegated to /discover" with a placeholder in the plan body so phases stay concrete. Technical questions are yours; resolve them.
+4. **Blind-spot sweep.** Walk `/scope`'s anchor checklist (scope edges, manifests/apps changed, reconciliation & dependency ordering, secrets & config, ingress/DNS, reuse, idempotency & rollback, host/OS portability, observability). Resolve each via discovery doc → code/docs → your technical judgment. Product decisions still unresolved → list under "Open questions — delegated to /scope" with a placeholder in the plan body so phases stay concrete. Technical questions are yours; resolve them.
 
 5. **Pick save location** (no asking):
    - `docs/work-in-progress/` (default) · `docs/personal/` (only if user called it "my plan") · `.claude/plans/` (fallback).
@@ -25,13 +25,13 @@ Convert resolved context into a vertical-slice plan. **Never ask the user mid-fl
 
 - **Goal** — brief description.
 - **Context** — docs read, key files, public contracts in scope, resolved decisions.
-- **Open questions — delegated to /discover** — unresolved product decisions, each naming what's at stake. Write "None — all decisions resolved" if empty; the section is always present so absence never reads as "I forgot to check".
+- **Open questions — delegated to /scope** — unresolved product decisions, each naming what's at stake. Write "None — all decisions resolved" if empty; the section is always present so absence never reads as "I forgot to check".
 - **Phases** — vertical slices (see below), each with:
   - **Description** — the new behavior delivered end-to-end.
   - **To-do list** — checkbox actions.
   - **Acceptance criteria** — see below.
 - **Documentation to update** — docs to write/edit once all phases ship.
-- **Next step** — one sentence: which phase to start, or "Run `/discover` on this plan to resolve open questions before executing."
+- **Next step** — one sentence: which phase to start, or "Run `/scope` on this plan to resolve open questions before executing."
 
 ## Vertical slices (non-negotiable)
 

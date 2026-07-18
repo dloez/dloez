@@ -64,7 +64,7 @@ Do NOT rely on private or session memory for durable rules. Anything that must p
 
 ## Plans
 
-Plans and discovery docs live in `docs/work-in-progress/` (default), `docs/personal/`, or `.claude/plans/`. The filename must contain `plan` or `discovery`. Use the `make-plan`, `execute-plan`, and `discover` skills to read/write them.
+Plans and discovery docs live in `docs/work-in-progress/` (default), `docs/personal/`, or `.claude/plans/`. The filename must contain `plan` or `discovery`. Use the `make-plan`, `execute-plan`, and `scope` skills to read/write them.
 
 ---
 

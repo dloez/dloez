@@ -40,7 +40,7 @@ description: Execute a previously created plan from .claude/plans/, docs/work-in
 6. **New work discovered mid-phase:**
    - Prerequisite/clarification for current phase → add as a new to-do inside it, with its own acceptance criteria.
    - Net-new scope → pause, surface it, decide with the user whether to add a top-level phase or defer. **No nested sub-phases beyond one level** (no 4a/4b/4c).
-   - Same kind of surprise twice in one phase → stop and re-run `/discover` against the remaining phases.
+   - Same kind of surprise twice in one phase → stop and re-run `/scope` against the remaining phases.
 
 7. **All targeted phases complete:** update the docs listed in **Documentation to update** (CLAUDE.md's Keep Documentation Updated rule applies).
 

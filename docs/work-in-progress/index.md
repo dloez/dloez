@@ -18,7 +18,7 @@ State each doc's status at the top:
 
 ## Skills
 
-- `discover` — interviews to surface decisions, writes a discovery doc here.
+- `scope` — interviews to surface decisions, writes a discovery doc here.
 - `make-plan` — turns a task (and any discovery doc) into a phased plan here.
 - `execute-plan` — reads a plan from here and runs it phase by phase.
 
