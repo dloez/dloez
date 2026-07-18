@@ -9,6 +9,7 @@ Portable zsh setup that bootstraps a fresh Linux, macOS, or WSL machine with one
 - **fzf** integration (single binary in `~/.local/bin`) — `Ctrl-R` history search, `Ctrl-T` file paste, `Alt-C` directory jump.
 - **zsh completion** — `compinit` with a cached dump, menu selection, case-insensitive matching, and colored candidates.
 - **History-substring search** — `↑`/`↓` walk only the history entries matching the typed prefix.
+- **herdr** — the mouse-first terminal multiplexer for AI coding agents (binary in `~/.local/bin`, config symlinked from the repo).
 - **Optional Claude Code skills** — on request (install prompt or `INSTALL_CLAUDE_SKILLS=1`), symlinks this repo's `.claude/skills/` into `~/.claude/skills/`. See [Layout and testing](reference/layout-and-testing.md).
 
 ## Design stance

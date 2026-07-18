@@ -167,6 +167,26 @@ install_fzf() {
   fi
 }
 
+install_herdr() {
+  if command -v herdr >/dev/null 2>&1; then
+    info "herdr already installed ($(command -v herdr))"
+    return 0
+  fi
+  info "Installing herdr"
+  mkdir -p "$HOME/.local/bin"
+  hd_log=$(mktemp)
+  hd_script=$(mktemp)
+  if curl -fsSL https://herdr.dev/install.sh -o "$hd_script" 2>"$hd_log" \
+     && HERDR_INSTALL_DIR="$HOME/.local/bin" sh "$hd_script" >>"$hd_log" 2>&1; then
+    rm -f "$hd_log" "$hd_script"
+  else
+    err "herdr install failed:"
+    cat "$hd_log" >&2
+    rm -f "$hd_log" "$hd_script"
+    exit 1
+  fi
+}
+
 setup_windows() {
   grep -qi microsoft /proc/version 2>/dev/null || return 0
   if ! command -v powershell.exe >/dev/null 2>&1; then
@@ -374,6 +394,8 @@ clone_or_update https://github.com/zsh-users/zsh-syntax-highlighting \
 
 install_fzf
 
+install_herdr
+
 info "Linking config files"
 link_file "$CONFIG_DIR/zshrc"                     "$HOME/.zshrc"
 link_file "$CONFIG_DIR/starship.toml"             "$CONFIG_HOME/starship.toml"
@@ -384,6 +406,7 @@ link_file "$CONFIG_DIR/zsh/completion.zsh"        "$CONFIG_HOME/zsh/completion.z
 link_file "$CONFIG_DIR/zsh/history-search.zsh"    "$CONFIG_HOME/zsh/history-search.zsh"
 link_file "$CONFIG_DIR/zsh/async-prompt.zsh"      "$CONFIG_HOME/zsh/async-prompt.zsh"
 link_file "$CONFIG_DIR/zsh/transient-prompt.zsh"  "$CONFIG_HOME/zsh/transient-prompt.zsh"
+link_file "$CONFIG_DIR/herdr/config.toml"         "$CONFIG_HOME/herdr/config.toml"
 
 set_default_shell
 

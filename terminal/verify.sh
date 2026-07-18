@@ -40,6 +40,7 @@ check "curl installed"     command -v curl
 check "zsh installed"      command -v zsh
 check "starship installed" test -x "$HOME/.local/bin/starship"
 check "fzf installed"      test -x "$HOME/.local/bin/fzf"
+check "herdr installed"    test -x "$HOME/.local/bin/herdr"
 
 for f in .zshrc \
          .config/starship.toml \
@@ -49,7 +50,8 @@ for f in .zshrc \
          .config/zsh/completion.zsh \
          .config/zsh/history-search.zsh \
          .config/zsh/async-prompt.zsh \
-         .config/zsh/transient-prompt.zsh; do
+         .config/zsh/transient-prompt.zsh \
+         .config/herdr/config.toml; do
   check "symlink $f" link_into_repo "$HOME/$f"
 done
 

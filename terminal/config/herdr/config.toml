@@ -1,0 +1,12 @@
+onboarding = false
+ui.host_cursor = "native"
+
+[ui.toast]
+delivery = "herdr"
+
+[ui.sound]
+enabled = false
+
+[theme]
+name = "gruvbox"
+auto_switch = false
