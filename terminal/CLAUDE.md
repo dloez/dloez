@@ -21,4 +21,5 @@
 - [Bootstrap a machine](../docs/terminal/how-to/bootstrap-machine.md)
 - [Async prompt design](../docs/terminal/explanation/async-prompt.md)
 - [WSL host setup](../docs/terminal/explanation/wsl-host-setup.md)
+- [Interactive features](../docs/terminal/reference/interactive-features.md)
 - [Layout and testing](../docs/terminal/reference/layout-and-testing.md)

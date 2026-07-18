@@ -11,8 +11,12 @@
 | `config/starship-fast.toml` | `~/.config/starship-fast.toml` |
 | `config/zsh/cursor.zsh` | `~/.config/zsh/cursor.zsh` |
 | `config/zsh/perf.zsh` | `~/.config/zsh/perf.zsh` |
+| `config/zsh/completion.zsh` | `~/.config/zsh/completion.zsh` |
+| `config/zsh/history-search.zsh` | `~/.config/zsh/history-search.zsh` |
 | `config/zsh/async-prompt.zsh` | `~/.config/zsh/async-prompt.zsh` |
 | `config/zsh/transient-prompt.zsh` | `~/.config/zsh/transient-prompt.zsh` |
+
+`fzf` is not symlinked: the installer downloads its binary to `~/.local/bin/fzf` (alongside starship) and `zshrc` sources `fzf --zsh` at startup when the binary is present. See [Interactive features](interactive-features.md).
 
 ## Claude Code skills (opt-in)
 

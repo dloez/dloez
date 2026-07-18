@@ -39,12 +39,15 @@ check "git installed"      command -v git
 check "curl installed"     command -v curl
 check "zsh installed"      command -v zsh
 check "starship installed" test -x "$HOME/.local/bin/starship"
+check "fzf installed"      test -x "$HOME/.local/bin/fzf"
 
 for f in .zshrc \
          .config/starship.toml \
          .config/starship-fast.toml \
          .config/zsh/cursor.zsh \
          .config/zsh/perf.zsh \
+         .config/zsh/completion.zsh \
+         .config/zsh/history-search.zsh \
          .config/zsh/async-prompt.zsh \
          .config/zsh/transient-prompt.zsh; do
   check "symlink $f" link_into_repo "$HOME/$f"

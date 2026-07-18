@@ -6,6 +6,9 @@ Portable zsh setup that bootstraps a fresh Linux, macOS, or WSL machine with one
 - **zsh-autosuggestions** + **zsh-syntax-highlighting** plugins.
 - A collapsing **transient prompt** — past prompts shrink to a bare `❯`.
 - **Async prompt rendering** — an instant git-less first paint, then git info swapped in from a background render.
+- **fzf** integration (single binary in `~/.local/bin`) — `Ctrl-R` history search, `Ctrl-T` file paste, `Alt-C` directory jump.
+- **zsh completion** — `compinit` with a cached dump, menu selection, case-insensitive matching, and colored candidates.
+- **History-substring search** — `↑`/`↓` walk only the history entries matching the typed prefix.
 - **Optional Claude Code skills** — on request (install prompt or `INSTALL_CLAUDE_SKILLS=1`), symlinks this repo's `.claude/skills/` into `~/.claude/skills/`. See [Layout and testing](reference/layout-and-testing.md).
 
 ## Design stance
@@ -22,6 +25,7 @@ Portable zsh setup that bootstraps a fresh Linux, macOS, or WSL machine with one
 | [Bootstrap a machine](how-to/bootstrap-machine.md) | How-to | Run the one-command installer and verify the result. |
 | [Async prompt design](explanation/async-prompt.md) | Explanation | Why the prompt renders in two paints and how the swap works. |
 | [WSL host setup](explanation/wsl-host-setup.md) | Explanation | Why and how the installer configures the Windows host. |
+| [Interactive features](reference/interactive-features.md) | Reference | Completion, fzf keys, and history-substring search. |
 | [Layout and testing](reference/layout-and-testing.md) | Reference | Symlink map and the test/verify/lint/benchmark commands. |
 
 ---

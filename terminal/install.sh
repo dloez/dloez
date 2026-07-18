@@ -6,6 +6,7 @@ REPO_URL="https://github.com/dloez/dloez.git"
 MANAGED_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/dloez"
 PLUGIN_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+FZF_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/fzf"
 
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -144,6 +145,26 @@ link_file() {
 
   ln -s "$src" "$dest"
   info "linked: ${dest#"$HOME"/}"
+}
+
+install_fzf() {
+  if command -v fzf >/dev/null 2>&1; then
+    info "fzf already installed ($(command -v fzf))"
+    return 0
+  fi
+  info "Installing fzf"
+  mkdir -p "$HOME/.local/bin"
+  clone_or_update https://github.com/junegunn/fzf "$FZF_DIR"
+  fzf_log=$(mktemp)
+  if "$FZF_DIR/install" --bin >"$fzf_log" 2>&1; then
+    ln -sf "$FZF_DIR/bin/fzf" "$HOME/.local/bin/fzf"
+    rm -f "$fzf_log"
+  else
+    err "fzf install failed:"
+    cat "$fzf_log" >&2
+    rm -f "$fzf_log"
+    exit 1
+  fi
 }
 
 setup_windows() {
@@ -351,12 +372,16 @@ clone_or_update https://github.com/zsh-users/zsh-autosuggestions \
 clone_or_update https://github.com/zsh-users/zsh-syntax-highlighting \
   "$PLUGIN_DIR/zsh-syntax-highlighting"
 
+install_fzf
+
 info "Linking config files"
 link_file "$CONFIG_DIR/zshrc"                     "$HOME/.zshrc"
 link_file "$CONFIG_DIR/starship.toml"             "$CONFIG_HOME/starship.toml"
 link_file "$CONFIG_DIR/starship-fast.toml"        "$CONFIG_HOME/starship-fast.toml"
 link_file "$CONFIG_DIR/zsh/cursor.zsh"            "$CONFIG_HOME/zsh/cursor.zsh"
 link_file "$CONFIG_DIR/zsh/perf.zsh"              "$CONFIG_HOME/zsh/perf.zsh"
+link_file "$CONFIG_DIR/zsh/completion.zsh"        "$CONFIG_HOME/zsh/completion.zsh"
+link_file "$CONFIG_DIR/zsh/history-search.zsh"    "$CONFIG_HOME/zsh/history-search.zsh"
 link_file "$CONFIG_DIR/zsh/async-prompt.zsh"      "$CONFIG_HOME/zsh/async-prompt.zsh"
 link_file "$CONFIG_DIR/zsh/transient-prompt.zsh"  "$CONFIG_HOME/zsh/transient-prompt.zsh"
 

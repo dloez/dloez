@@ -16,6 +16,12 @@ eval "$(starship init zsh)"
 
 [ -f "$ZSH_CONFIG/perf.zsh" ] && source "$ZSH_CONFIG/perf.zsh"
 
+[ -f "$ZSH_CONFIG/completion.zsh" ] && source "$ZSH_CONFIG/completion.zsh"
+
+command -v fzf >/dev/null 2>&1 && source <(fzf --zsh) 2>/dev/null
+
+[ -f "$ZSH_CONFIG/history-search.zsh" ] && source "$ZSH_CONFIG/history-search.zsh"
+
 source "$PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
 source "$PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
