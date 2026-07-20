@@ -150,6 +150,16 @@ link_file() {
   info "linked: ${dest#"$HOME"/}"
 }
 
+ensure_skip_global_compinit() {
+  zshenv="$HOME/.zshenv"
+  if [ -f "$zshenv" ] && grep -qE '^[[:space:]]*(export[[:space:]]+)?skip_global_compinit=1' "$zshenv"; then
+    info "ok:     .zshenv skips global compinit"
+    return 0
+  fi
+  info "Adding skip_global_compinit=1 to .zshenv"
+  printf 'skip_global_compinit=1\n' >>"$zshenv"
+}
+
 install_fzf() {
   if command -v fzf >/dev/null 2>&1; then
     info "fzf already installed ($(command -v fzf))"
@@ -494,6 +504,10 @@ link_file "$CONFIG_DIR/zsh/history-search.zsh"    "$CONFIG_HOME/zsh/history-sear
 link_file "$CONFIG_DIR/zsh/async-prompt.zsh"      "$CONFIG_HOME/zsh/async-prompt.zsh"
 link_file "$CONFIG_DIR/zsh/transient-prompt.zsh"  "$CONFIG_HOME/zsh/transient-prompt.zsh"
 link_file "$CONFIG_DIR/herdr/config.toml"         "$CONFIG_HOME/herdr/config.toml"
+
+rm -f "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/"*-init.zsh*
+
+ensure_skip_global_compinit
 
 set_default_shell
 

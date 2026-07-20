@@ -65,17 +65,24 @@ _async_prompt_flags() {
 
 typeset -gA _async_prompt_cache
 _async_prompt_key=''
+_async_prompt_sig=''
 
 _async_prompt_precmd() {
   local -a flags
   _async_prompt_flags; flags=("${_async_prompt_reply[@]}")
 
-  local REPLY dir char key
+  local REPLY dir char key sig
   _async_prompt_dir; dir=$REPLY
   _async_prompt_char; char=$REPLY
   key="$COLUMNS:$PWD"
   PROMPT=$'\n'${_async_prompt_cache[$key]:-$dir}$'\n'$char
   RPROMPT=''
+
+  sig="${(pj:\x1f:)flags}"$'\x1f'$PWD
+  if [[ $sig == "$_async_prompt_sig" && -n ${_async_prompt_cache[$key]} ]]; then
+    return 0
+  fi
+  _async_prompt_sig=$sig
 
   if (( _async_prompt_fd )); then
     zle -F "$_async_prompt_fd" 2>/dev/null

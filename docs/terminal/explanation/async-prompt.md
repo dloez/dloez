@@ -19,6 +19,14 @@ A single starship render in a node repo is ~20ms (the `nodejs` version probe and
 
 The swap only fires when the full render actually differs from what is painted, avoiding a needless redraw. The redraw is bracketed with synchronized-output and cursor-hide escapes so the git and context info appear in place without flicker. There is no right-prompt render: `starship.toml` sets no `right_format`, so `RPROMPT` is always empty and rendering it was a wasted process spawn.
 
+## Skipping redundant renders
+
+Launching the background render on *every* prompt is the wrong default. Holding Enter on an empty line fires `precmd` dozens of times a second, and each fire used to spawn a fresh `starship prompt` — which itself shells out to `git`. The previous in-flight render was torn down (its fd closed → `SIGPIPE`) before it could finish, so the shell spent its time forking and killing starship + git processes and re-registering `zle -F` callbacks instead of reading input. Keys queued; the prompt stuttered. Measured: N empty Enters spawned N+2 starship processes, linearly.
+
+The hook therefore skips the fork when it would be pointless. It builds a signature from the render inputs — the full starship flag set (terminal width, keymap, exit status, pipestatus, command duration, jobs) plus `$PWD` — and, when that signature matches the last launched render *and* a cached line already exists for the directory, it paints from cache and returns without forking. An empty Enter fires no `preexec`, so starship's own `precmd` leaves duration and status unset: the signature is byte-identical every time, and holding Enter now spawns a constant **2** starship processes instead of one per keystroke. Any real command changes the duration (or status, or `$PWD`), so the signature differs and a fresh render always fires — git and language context stay current after actual work.
+
+The one thing this trades away: git state that changes *without* a command running (an edit made in another window) is not repainted until the next real command, since empty Enters no longer re-render. This is the same one-render lag the in-memory cache already carries, and it self-corrects on any command. Keeping the signature in step with the flags matters — a new starship flag that affects the first prompt line must be added to the flag set (in `_async_prompt_flags`) so the signature invalidates when that input changes.
+
 ## Why the paint must match — and how that is enforced
 
 The full render swaps in *over* the instant paint, so the instant paint's directory and character must be **byte-identical** to what starship produces; otherwise text shifts on screen and the prompt visibly jumps. `starship-fast.toml` (format `$directory$line_break$character`) is the spec for that: it renders exactly the directory + character portion of `starship.toml`, and the pure-zsh paint must reproduce it.

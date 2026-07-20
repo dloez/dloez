@@ -21,7 +21,7 @@ Set up the full zsh environment on a fresh Linux, macOS, or WSL machine with one
    2. Installs [starship](https://starship.rs) into `~/.local/bin` if missing.
    3. Clones/updates the zsh plugins into `~/.local/share/zsh/plugins`.
    4. Installs [fzf](https://github.com/junegunn/fzf) and [herdr](https://herdr.dev) into `~/.local/bin` if missing.
-   5. Symlinks each config file into place, backing up any pre-existing real file to `<file>.bak.<timestamp>`. See the [symlink map](../reference/layout-and-testing.md).
+   5. Symlinks each config file into place, backing up any pre-existing real file to `<file>.bak.<timestamp>` (see the [symlink map](../reference/layout-and-testing.md)), and appends `skip_global_compinit=1` to `~/.zshenv` (creating it if absent) so shell startup skips the redundant global `compinit` — see [Startup performance](../explanation/startup-performance.md).
    6. Sets zsh as the default login shell (`chsh`), if it isn't already.
    7. On WSL, configures the font and Windows Terminal on the host — see [WSL host setup](../explanation/wsl-host-setup.md).
    8. Installs a recent Neovim into `~/.local` and clones the personal kickstart fork (`dloez/kickstart.nvim`) into `~/.config/nvim` if absent (part of the default setup; an existing config is left untouched).

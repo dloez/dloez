@@ -26,6 +26,7 @@ Portable zsh setup that bootstraps a fresh Linux, macOS, or WSL machine with one
 |----------|------|--------|
 | [Bootstrap a machine](how-to/bootstrap-machine.md) | How-to | Run the one-command installer and verify the result. |
 | [Async prompt design](explanation/async-prompt.md) | Explanation | Why the prompt renders in two paints and how the swap works. |
+| [Startup performance](explanation/startup-performance.md) | Explanation | Why interactive startup is fast: the global-compinit skip, compiled/cached sourcing, and the WSL rehash trap. |
 | [WSL host setup](explanation/wsl-host-setup.md) | Explanation | Why and how the installer configures the Windows host. |
 | [Interactive features](reference/interactive-features.md) | Reference | Completion, fzf keys, and history-substring search. |
 | [Layout and testing](reference/layout-and-testing.md) | Reference | Symlink map and the test/verify/lint/benchmark commands. |

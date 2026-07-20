@@ -78,6 +78,7 @@ fi
 
 zsh_path=$(command -v zsh || echo zsh)
 check "default shell is zsh" test "$(current_shell)" = "$zsh_path"
+check "zshenv skips global compinit" grep -qE '^[[:space:]]*(export[[:space:]]+)?skip_global_compinit=1' "$HOME/.zshenv"
 check "zsh sources config cleanly" zsh -i -c 'command -v starship >/dev/null'
 
 paint_matches_starship_fast() {
@@ -114,6 +115,27 @@ exit $(( fails > 0 ))
 ZEOF
 }
 check "instant paint matches starship-fast" paint_matches_starship_fast
+
+async_skips_redundant_render() {
+  command -v zsh >/dev/null 2>&1 || return 0
+  test -f "$HOME/.config/zsh/async-prompt.zsh" || return 0
+  zsh -f <<'ZEOF'
+emulate -L zsh
+source "$HOME/.config/zsh/async-prompt.zsh"
+starship() { print -n '' }
+zle() { : }
+STARSHIP_CMD_STATUS=0
+COLUMNS=80
+cd /tmp || exit 2
+k="$COLUMNS:$PWD"
+_async_prompt_cache[$k]='cached-dir-line'
+_async_prompt_precmd
+if (( _async_prompt_fd )); then exec {_async_prompt_fd}<&- 2>/dev/null; _async_prompt_fd=0; fi
+_async_prompt_precmd
+exit $(( _async_prompt_fd != 0 ))
+ZEOF
+}
+check "async skips redundant render" async_skips_redundant_render
 
 echo "-- second install (idempotency) --"
 if out=$(sh "$REPO/terminal/install.sh" 2>&1); then

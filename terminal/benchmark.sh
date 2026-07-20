@@ -12,8 +12,12 @@ typeset -A DIRS
 DIRS=(
   home        "$HOME"
   small-repo  "$REPO_ROOT"
-  sqlite      "$HOME/workspace/sqlite"
 )
+BENCH_NAMES=(home small-repo)
+if [ -n "${BENCH_REPO:-}" ] && [ -d "${BENCH_REPO:-}" ]; then
+  DIRS[big-repo]="$BENCH_REPO"
+  BENCH_NAMES+=(big-repo)
+fi
 
 say() { printf '\033[1;34m==>\033[0m %s\n' "$1"; }
 
@@ -29,7 +33,7 @@ say() { printf '\033[1;34m==>\033[0m %s\n' "$1"; }
 say "Benchmarking prompt render per directory"
 echo "## Prompt render (starship prompt)" >>"$OUT"
 echo >>"$OUT"
-for name in home small-repo sqlite; do
+for name in $BENCH_NAMES; do
   dir="${DIRS[$name]}"
   [ -d "$dir" ] || { echo "- $name: SKIPPED (missing $dir)" >>"$OUT"; continue; }
   say "  $name ($dir)"
@@ -53,7 +57,7 @@ if [ -f "$PAINT_SRC" ]; then
     echo '| directory | mean per paint |'
     echo '|-----------|----------------|'
   } >>"$OUT"
-  for name in home small-repo sqlite; do
+  for name in $BENCH_NAMES; do
     dir="${DIRS[$name]}"
     [ -d "$dir" ] || continue
     say "  $name ($dir)"
@@ -67,13 +71,15 @@ if [ -f "$PAINT_SRC" ]; then
   done
 fi
 
-say "Collecting starship module timings (sqlite)"
+timings_name=${DIRS[big-repo]:+big-repo}; timings_name=${timings_name:-small-repo}
+timings_dir=${DIRS[$timings_name]}
+say "Collecting starship module timings ($timings_name)"
 {
   echo
-  echo "## Starship module timings (sqlite repo)"
+  echo "## Starship module timings ($timings_name)"
   echo
   echo '```'
-  (cd "${DIRS[sqlite]}" && starship timings 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E '^\s' || true)
+  (cd "$timings_dir" && starship timings 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | grep -E '^\s' || true)
   echo '```'
 } >>"$OUT"
 
