@@ -4,7 +4,7 @@ zsh interactivity layered on top of the prompt. Each piece is a small file under
 
 ## Completion
 
-`config/zsh/completion.zsh` initialises zsh's completion system (`compinit`). The dump lives at `${XDG_CACHE_HOME:-~/.cache}/zsh/zcompdump` and is rebuilt only when missing or older than 24h; a fresh dump loads with `compinit -C`, which skips the security audit and keeps startup fast. Styling applied: `menu select`, case-insensitive matching (`m:{a-zA-Z}={A-Za-z}`), grouped results with descriptions, and `LS_COLORS`-driven list colors when `LS_COLORS` is set. `complete_in_word` and `always_to_end` are enabled so completion works mid-word.
+`config/zsh/completion.zsh` initialises zsh's completion system (`compinit`). The dump lives at `${XDG_CACHE_HOME:-~/.cache}/zsh/zcompdump`. Startup always takes the fast path — `compinit -C`, which skips the `compaudit` fpath security scan (the single biggest startup cost, ~38ms) — and loads a `zcompile`d digest of the dump. When the dump is older than 24h it is still loaded fast; the rebuild (full `compinit` + re-`zcompile`) runs in a disowned background job so the refresh never blocks a shell, only the *next* one benefits. A missing dump is built synchronously (first run on a new machine only). Styling applied: `menu select`, case-insensitive matching (`m:{a-zA-Z}={A-Za-z}`), grouped results with descriptions, and `LS_COLORS`-driven list colors when `LS_COLORS` is set. `complete_in_word` and `always_to_end` are enabled so completion works mid-word.
 
 ## fzf
 

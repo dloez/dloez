@@ -5,7 +5,7 @@ Portable zsh setup that bootstraps a fresh Linux, macOS, or WSL machine with one
 - **starship** prompt (installed to `~/.local/bin`, no package manager needed).
 - **zsh-autosuggestions** + **zsh-syntax-highlighting** plugins.
 - A collapsing **transient prompt** — past prompts shrink to a bare `❯`.
-- **Async prompt rendering** — an instant git-less first paint, then git info swapped in from a background render.
+- **Async prompt rendering** — a pure-zsh instant first paint (zero subprocesses), then git and context info swapped in from a background starship render.
 - **fzf** integration (single binary in `~/.local/bin`) — `Ctrl-R` history search, `Ctrl-T` file paste, `Alt-C` directory jump.
 - **zsh completion** — `compinit` with a cached dump, menu selection, case-insensitive matching, and colored candidates.
 - **History-substring search** — `↑`/`↓` walk only the history entries matching the typed prefix.

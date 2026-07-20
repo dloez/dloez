@@ -2,13 +2,16 @@ _zdump="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump"
 [[ -d "${_zdump:h}" ]] || mkdir -p "${_zdump:h}"
 
 autoload -Uz compinit
-_zdump_fresh=("$_zdump"(Nmh-24))
-if (( $#_zdump_fresh )); then
+if [[ -s $_zdump ]]; then
   compinit -C -d "$_zdump"
+  [[ ${_zdump}.zwc -nt $_zdump ]] || zcompile -R -- "${_zdump}.zwc" "$_zdump" 2>/dev/null
+  _zdump_stale=($_zdump(Nmh+24))
+  (( $#_zdump_stale )) && { compinit -d "$_zdump" && touch "$_zdump" && zcompile -R -- "${_zdump}.zwc" "$_zdump" } &!
 else
   compinit -d "$_zdump"
+  zcompile -R -- "${_zdump}.zwc" "$_zdump" 2>/dev/null
 fi
-unset _zdump _zdump_fresh
+unset _zdump _zdump_stale
 
 setopt complete_in_word always_to_end
 

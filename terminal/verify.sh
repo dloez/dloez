@@ -80,6 +80,41 @@ zsh_path=$(command -v zsh || echo zsh)
 check "default shell is zsh" test "$(current_shell)" = "$zsh_path"
 check "zsh sources config cleanly" zsh -i -c 'command -v starship >/dev/null'
 
+paint_matches_starship_fast() {
+  command -v zsh >/dev/null 2>&1 || return 0
+  test -x "$HOME/.local/bin/starship" || return 0
+  test -f "$HOME/.config/starship-fast.toml" || return 0
+  test -f "$HOME/.config/zsh/async-prompt.zsh" || return 0
+  zsh -f <<'ZEOF'
+emulate -L zsh
+export PATH="$HOME/.local/bin:$PATH"
+source "$HOME/.config/zsh/async-prompt.zsh"
+fc="$HOME/.config/starship-fast.toml"
+paint() {
+  local REPLY dir char
+  _async_prompt_dir; dir=$REPLY
+  _async_prompt_char; char=$REPLY
+  print -rn -- $'\n'$dir$'\n'$char
+}
+repo="$HOME/.cache/starship-drift-check"
+rm -rf "$repo"; mkdir -p "$repo/inner/deep"
+(cd "$repo" && git init -q) 2>/dev/null
+dirs=( "$HOME" / /usr/share /etc /tmp "$repo" "$repo/inner/deep" )
+fails=0
+for d in $dirs; do
+  [[ -d $d ]] || continue
+  cd $d || continue
+  for st in 0 1; do
+    STARSHIP_CMD_STATUS=$st
+    [[ "$(paint)" == "$(STARSHIP_SHELL=zsh STARSHIP_CONFIG=$fc starship prompt --terminal-width=120 --status=$st)" ]] || (( fails++ ))
+  done
+done
+rm -rf "$repo"
+exit $(( fails > 0 ))
+ZEOF
+}
+check "instant paint matches starship-fast" paint_matches_starship_fast
+
 echo "-- second install (idempotency) --"
 if out=$(sh "$REPO/terminal/install.sh" 2>&1); then
   if printf '%s\n' "$out" | grep -q 'starship already installed'; then

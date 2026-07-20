@@ -40,21 +40,30 @@ for name in home small-repo sqlite; do
   tail -n +2 /tmp/bench-frag.md >>"$OUT"
 done
 
-FAST_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/starship-fast.toml"
-if [ -f "$FAST_CONFIG" ]; then
-  say "Benchmarking blocking render (starship-fast.toml)"
-  echo >>"$OUT"
-  echo "## Blocking render with async prompt (fast config)" >>"$OUT"
-  echo >>"$OUT"
+PAINT_SRC="${XDG_CONFIG_HOME:-$HOME/.config}/zsh/async-prompt.zsh"
+if [ -f "$PAINT_SRC" ]; then
+  say "Benchmarking pure-zsh instant paint (in-process)"
+  zmodload zsh/datetime
+  source "$PAINT_SRC"
+  _bench_paint() { local REPLY; _async_prompt_dir; _async_prompt_char }
+  {
+    echo
+    echo "## Pure-zsh instant paint (in-process, zero forks)"
+    echo
+    echo '| directory | mean per paint |'
+    echo '|-----------|----------------|'
+  } >>"$OUT"
   for name in home small-repo sqlite; do
     dir="${DIRS[$name]}"
     [ -d "$dir" ] || continue
     say "  $name ($dir)"
-    hyperfine --warmup 3 --min-runs 20 \
-      --command-name "$name (fast)" \
-      "cd '$dir' && STARSHIP_CONFIG='$FAST_CONFIG' starship prompt --terminal-width 120" \
-      --export-markdown /tmp/bench-frag.md >/dev/null
-    tail -n +2 /tmp/bench-frag.md >>"$OUT"
+    (
+      cd "$dir" || exit
+      STARSHIP_CMD_STATUS=0
+      repeat 200 _bench_paint
+      typeset -F _s=$EPOCHREALTIME; repeat 5000 _bench_paint; typeset -F _e=$EPOCHREALTIME
+      printf '| %s | %.4f ms |\n' "$name" $(( (_e - _s) * 1000 / 5000 )) >>"$OUT"
+    )
   done
 fi
 
