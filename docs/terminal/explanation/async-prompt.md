@@ -13,7 +13,11 @@ Even a git-less "fast" config does not fix this on its own: rendering it still f
 1. **Instant first paint (pure zsh, zero forks).** The `precmd` hook builds `PROMPT` in zsh alone — no subprocess — reproducing starship's default `directory` and `character` modules: bold-cyan path with `~`/truncate-to-repo/read-only-lock, and a green/red `❯` (or `❮` in vi command mode). This lands in ~0.02ms, so the shell is typeable instantly.
 2. **Background full render.** The same hook launches `starship prompt` with the full `starship.toml` in a child process, reading its output through a file-descriptor callback (`zle -F`). When the full render — git branch and status, plus language, docker, and cloud modules — is ready, it swaps into `PROMPT` and calls `zle reset-prompt`.
 
-The swap only fires when the full render actually differs from the instant paint, avoiding a needless redraw. The redraw is bracketed with synchronized-output and cursor-hide escapes so the git and context info appear in place without flicker. There is no right-prompt render: `starship.toml` sets no `right_format`, so `RPROMPT` is always empty and rendering it was a wasted process spawn.
+## Repainting from cache
+
+A single starship render in a node repo is ~20ms (the `nodejs` version probe and `git_status` scan dominate, running concurrently). If the instant paint only ever showed the directory, that git/language context would visibly pop in on *every* prompt. So the hook keeps the last full render per `"$COLUMNS:$PWD"` in an in-memory associative array and repaints *that* on the instant paint. After the first visit to a directory, git and language context therefore appear with zero delay on every subsequent prompt; the background render then silently refreshes the cache. This is p10k's instant-prompt trick, minus disk persistence — so the pop-in happens at most once per directory per session, and the shown context can lag real git state by one render (~20ms) right after a state-changing command, exactly as p10k does.
+
+The swap only fires when the full render actually differs from what is painted, avoiding a needless redraw. The redraw is bracketed with synchronized-output and cursor-hide escapes so the git and context info appear in place without flicker. There is no right-prompt render: `starship.toml` sets no `right_format`, so `RPROMPT` is always empty and rendering it was a wasted process spawn.
 
 ## Why the paint must match — and how that is enforced
 

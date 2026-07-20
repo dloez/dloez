@@ -63,14 +63,18 @@ _async_prompt_flags() {
   )
 }
 
+typeset -gA _async_prompt_cache
+_async_prompt_key=''
+
 _async_prompt_precmd() {
   local -a flags
   _async_prompt_flags; flags=("${_async_prompt_reply[@]}")
 
-  local REPLY dir char
+  local REPLY dir char key
   _async_prompt_dir; dir=$REPLY
   _async_prompt_char; char=$REPLY
-  PROMPT=$'\n'$dir$'\n'$char
+  key="$COLUMNS:$PWD"
+  PROMPT=$'\n'${_async_prompt_cache[$key]:-$dir}$'\n'$char
   RPROMPT=''
 
   if (( _async_prompt_fd )); then
@@ -79,6 +83,7 @@ _async_prompt_precmd() {
     _async_prompt_fd=0
   fi
 
+  _async_prompt_key=$key
   exec {_async_prompt_fd}< <(
     { starship prompt "${flags[@]}"; printf '%s' "$_async_prompt_sep"; } 2>/dev/null
   )
@@ -86,11 +91,16 @@ _async_prompt_precmd() {
 }
 
 _async_prompt_ready() {
-  local fd=$1 full
+  local fd=$1 full rest
   zle -F "$fd" 2>/dev/null
   IFS= read -r -u "$fd" -d "$_async_prompt_sep" full
   exec {fd}<&-
   _async_prompt_fd=0
+
+  if [[ -n $full ]]; then
+    rest=${full#$'\n'}
+    _async_prompt_cache[$_async_prompt_key]=${rest%%$'\n'*}
+  fi
 
   [[ $full == "$PROMPT" ]] && return 0
   PROMPT=$full
