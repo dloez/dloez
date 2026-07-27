@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'terminal/**'
+      - '.claude/skills/essential-skills.txt'
       - '.github/workflows/test-install.yaml'
   schedule:
     - cron: '17 6 * * *'

@@ -3,3 +3,5 @@ push
 create-pr
 scope
 nvim-coach
+next-task
+work-queue
