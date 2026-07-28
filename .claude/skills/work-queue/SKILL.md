@@ -9,6 +9,14 @@ A thin loop around `/next-task autonomous`. One entry per iteration, each in its
 
 **Arguments:** *(none)* runs uncapped — until the queue is empty or every remaining entry is the author's call. A number caps at that many iterations.
 
+## It runs alone
+
+**MANDATORY: this loop never asks the author anything.** No question tool, no pausing to have a disposition confirmed, no "I could do one of three things here." The author started an unattended run and is not at the keyboard — that is the whole point of the mode, and a question does not wait politely, it stops the grind dead and delivers one entry out of seven. Everything the author needs to weigh goes into the final report, where they read it once and act on all of it together.
+
+**An outcome no row below covers is still yours to decide.** The fault table is not exhaustive and never will be; when an iteration ends in a shape it does not name, take the disposition that keeps the tree clean and the work retrievable, write which one you took and why into the report, and continue. A gap in this file is a build decision, not a reason to stop — deciding it badly costs one entry, and stopping to ask costs every entry after it.
+
+**The only early stops are the two hard stops below.** Both are conditions of the repo rather than judgements about the work: a tree that will not come clean, and a gate already failing on a baseline the loop never touched. Neither is a question — they get reported, not asked. A subagent's report that ends by putting a question to the author is not a stop either: record it for the final report and take the next entry.
+
 ## It commits, and here is why
 
 Each closed entry gets its own commit before the next iteration starts. This is not a convenience — the loop does not work without it. `/next-task` validates an entry by handing a subagent `git diff`, so if entry two's work is still sitting uncommitted, the validator checking entry three is reading both and cannot tell which is which. Committing per entry also makes `git log --oneline` the run's record, so no separate journal is needed, and it makes a dirty tree at the start of an iteration mean exactly one thing: the previous entry left work behind.
@@ -40,6 +48,8 @@ Match the repo's commit convention — run `git log --oneline -5` and copy what 
 
 Emit one short line per iteration as you go, so anyone watching can follow without reading the transcript.
 
+**Wait for an iteration's subagent, never watch one.** The harness re-invokes you when it finishes, so there is nothing to poll: no `sleep` loop over `seq`, no grep for `"type":"result"`, no `tail -f`, and no reading the `.output` path the spawn returned — that file is the agent's full JSONL transcript, and reading it floods the context this loop exists to keep empty. Pass this on to any subagent you spawn that will itself spawn one, since a poll loop nested an agent deep is the same waste bought twice. An iteration takes as long as it takes; the notification is the signal, and the queue file and `git` are what you read when it arrives.
+
 ## Faults recover, they do not end the run
 
 **A fault costs the offending entry its turn, never the run.** Keep a ledger of how many times each entry has been attempted. Two attempts is the limit: on the second fault for the same entry, it gets the `**Needs the author:**` marker with the reason written into it, and the loop moves down the queue.
@@ -62,11 +72,14 @@ The faults and what each recovers to:
 |---|---|
 | Tree dirty at the start of an iteration | Subagent stashes it, labelled. Continue. |
 | Work uncommitted and no entry closed — an implementation abandoned partway | Subagent stashes it, labelled with the entry. Mark the entry, naming the gap the subagent hit. Continue. |
+| Work uncommitted and no entry closed, but the implementation is complete and the gate passes | Not the row above. Commit the code on its own, leave the entry standing with `**Attempted once:**` naming what validation flagged, and continue. |
 | The gate fails on a tree where an entry just closed | Commit nothing. Subagent stashes the work, labelled with the entry. Mark the entry with what failed, and continue — the entry did not close, whatever the file says. |
 | The report and the queue file disagree about what happened | Believe neither. Treat the entry as not done, stash anything uncommitted, and give it its second attempt with a fresh subagent. |
 | An iteration closed nothing, blocked nothing and re-sorted nothing | Second attempt. If it no-ops again, mark it and move down. |
 | An iteration rewrote, re-sorted or split the entry and produced no code | Charge the attempt: `**Attempted once:**` into the entry, naming what was found stale. Continue — step 3 still selects it. |
 | An entry rewritten twice, whether in this run or according to the marker already in the file | Keep the second rewrite, mark `**Needs the author:**` naming what could not be settled from the entry and its docs, and move down. An entry nobody can stabilise is underspecified, and no third rewrite will find that out. |
+
+**Complete-but-unvalidated is not abandonment, and the gate is what tells them apart.** `git status` reads the same in both, so run the gate before deciding which row you are in. Work that passes it is finished work whose *entry* did not close — usually because a validator kept finding one more stale sentence of prose rather than a defect in the code, which is a report the subagent is right not to close on and wrong to hand upwards as a question. Stashing that is the expensive mistake: a stash holding a landed rewrite conflicts with every later entry that touches the same files, and the loop pays for the same work twice. Commit it, leave the entry standing so the next visit's verifier sees the code is in and closes it in one cheap pass, and say in the report that the entry's code landed unclosed.
 
 **Which of the two markers each row writes.** A row that marks an entry outright — the abandoned implementation, the failed gate — writes `**Needs the author:**` with the reason under it, the same string `/next-task` writes and step 3 selects on. A row that gives the entry a second attempt writes `**Attempted once:**` now and `**Needs the author:**` only if it faults again.
 

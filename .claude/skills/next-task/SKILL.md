@@ -7,6 +7,8 @@ description: Work the top entry of a repo's work queue end to end — `tasks.md`
 
 One entry from the queue, verified before it is started and validated before it is closed. Both checks run in fresh subagents that know nothing about what you expect to find — a verifier holding your conclusion is not a verifier.
 
+**Wait for a subagent, never watch one.** The harness re-invokes you when a subagent finishes, so there is nothing to poll: no `sleep` loop over `seq`, no grep for `"type":"result"`, no `tail -f`, and no reading the `.output` path the spawn returned. That file is the agent's full JSONL transcript, so reading it floods the context this skill spends its whole budget keeping clean, and the loop cannot finish early — it sleeps out its remaining interval after the result has already landed. A verifier takes as long as it takes; the notification is the signal.
+
 **Arguments** — any combination, in any order:
 - *(none)* — take the first entry in the file and start, interactive. Never ask which entry to work on.
 - `autonomous` (`auto`, `-a`) — skip anything needing an author decision. See the mode section at the bottom.
