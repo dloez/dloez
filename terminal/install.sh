@@ -200,6 +200,33 @@ install_herdr() {
   fi
 }
 
+install_claude() {
+  if command -v claude >/dev/null 2>&1; then
+    info "claude already installed ($(command -v claude))"
+    return 0
+  fi
+  if ! command -v bash >/dev/null 2>&1; then
+    warn "Claude Code's installer needs bash; skipping the CLI"
+    return 0
+  fi
+  info "Installing Claude Code"
+  mkdir -p "$HOME/.local/bin"
+  cc_log=$(mktemp)
+  cc_script=$(mktemp)
+  if curl -fsSL https://claude.ai/install.sh -o "$cc_script" 2>"$cc_log" &&
+    bash "$cc_script" >>"$cc_log" 2>&1; then
+    rm -f "$cc_log" "$cc_script"
+  else
+    warn "Claude Code install failed — install it yourself and re-run:"
+    if [ -s "$cc_log" ]; then
+      while IFS= read -r line || [ -n "$line" ]; do
+        [ -n "$line" ] && printf '    %s\n' "$line" >&2
+      done <"$cc_log"
+    fi
+    rm -f "$cc_log" "$cc_script"
+  fi
+}
+
 nvim_recent_enough() {
   command -v nvim >/dev/null 2>&1 || return 1
   ver=$(nvim --version 2>/dev/null | sed -n '1s/^NVIM v\([0-9][0-9]*\.[0-9][0-9]*\).*/\1/p')
@@ -422,6 +449,73 @@ link_claude_runtime() {
   link_file "$runtime_src/cc-resume" "$HOME/.local/bin/cc-resume"
 }
 
+install_resume_agent_darwin() {
+  tmpl="$REPO_ROOT/terminal/config/claude/cc-resume.plist.in"
+  [ -f "$tmpl" ] || return 0
+  if ! command -v launchctl >/dev/null 2>&1; then
+    info "No launchctl — start the watcher yourself: cc-resume watch"
+    return 0
+  fi
+
+  agent_label=dev.dloez.cc-resume
+  agent_plist="$HOME/Library/LaunchAgents/$agent_label.plist"
+  mkdir -p "$HOME/Library/LaunchAgents" "${XDG_STATE_HOME:-$HOME/.local/state}/cc-resume"
+
+  # Generated, not symlinked: launchd plists take no $HOME expansion.
+  if ! sed "s|@HOME@|$HOME|g" "$tmpl" >"$agent_plist"; then
+    warn "could not write $agent_plist"
+    return 0
+  fi
+  info "wrote:  ${agent_plist#"$HOME"/}"
+
+  agent_target="gui/$(id -u)"
+  launchctl bootout "$agent_target/$agent_label" >/dev/null 2>&1 || true
+  if launchctl bootstrap "$agent_target" "$agent_plist" >/dev/null 2>&1 ||
+    launchctl load -w "$agent_plist" >/dev/null 2>&1; then
+    info "ok:     cc-resume LaunchAgent loaded (starts at login)"
+  else
+    warn "could not load the LaunchAgent — try: launchctl bootstrap $agent_target $agent_plist"
+  fi
+}
+
+install_resume_service_systemd() {
+  unit_src="$REPO_ROOT/terminal/config/claude/cc-resume.service"
+  [ -f "$unit_src" ] || return 0
+
+  if ! command -v systemctl >/dev/null 2>&1 ||
+    ! systemctl --user show-environment >/dev/null 2>&1; then
+    info "No systemd user session — start the watcher yourself: cc-resume watch"
+    return 0
+  fi
+
+  link_file "$unit_src" "$HOME/.config/systemd/user/cc-resume.service"
+  systemctl --user daemon-reload >/dev/null 2>&1 || true
+
+  if systemctl --user enable --now cc-resume.service >/dev/null 2>&1; then
+    info "ok:     cc-resume.service enabled and started"
+  else
+    warn "could not enable cc-resume.service — try: systemctl --user enable --now cc-resume"
+    return 0
+  fi
+
+  who=$(id -un)
+  if [ "$(loginctl show-user "$who" -p Linger --value 2>/dev/null)" = "yes" ]; then
+    info "ok:     lingering already on (watcher survives logout)"
+  elif loginctl enable-linger "$who" >/dev/null 2>&1; then
+    info "ok:     lingering enabled (watcher survives logout and reboot)"
+  else
+    warn "lingering is off, so the watcher stops when your last session ends"
+    warn "  enable it with: sudo loginctl enable-linger $who"
+  fi
+}
+
+install_resume_service() {
+  case "$(uname -s)" in
+    Darwin) install_resume_agent_darwin ;;
+    *) install_resume_service_systemd ;;
+  esac
+}
+
 register_claude_settings() {
   settings="$HOME/.claude/settings.json"
   hook="$HOME/.claude/hooks/stop-failure.sh"
@@ -493,9 +587,16 @@ enable_learning_loop() {
 }
 
 claude_setup_steps() {
+  case "${INSTALL_CLAUDE_CLI:-1}" in
+    0 | n | N | no | NO | false | FALSE)
+      info "Skipping the Claude Code CLI (INSTALL_CLAUDE_CLI=0)"
+      ;;
+    *) install_claude ;;
+  esac
   link_skills
   link_claude_runtime
   register_claude_settings
+  install_resume_service
   enable_learning_loop
 }
 
@@ -506,7 +607,7 @@ setup_claude() {
       ;;
     ask)
       if (exec </dev/tty) 2>/dev/null; then
-        printf '\033[1;34m==>\033[0m Set up Claude Code (skills + session resume + nvim learning loop)? [y/N] ' >/dev/tty
+        printf '\033[1;34m==>\033[0m Set up Claude Code (CLI + skills + session resume + nvim learning loop)? [y/N] ' >/dev/tty
         read -r reply </dev/tty || reply=""
         case "$reply" in
           y | Y | yes | YES) claude_setup_steps ;;

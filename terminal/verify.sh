@@ -35,6 +35,17 @@ claude_statusline_registered() {
     "$HOME/.claude/settings.json" >/dev/null 2>&1
 }
 
+resume_autostart_enabled() {
+  case "$(uname -s)" in
+    Darwin) test -f "$HOME/Library/LaunchAgents/dev.dloez.cc-resume.plist" ;;
+    *)
+      command -v systemctl >/dev/null 2>&1 || return 0
+      systemctl --user show-environment >/dev/null 2>&1 || return 0
+      systemctl --user is-enabled cc-resume.service >/dev/null 2>&1
+      ;;
+  esac
+}
+
 current_shell() {
   user=$(id -un)
   if command -v getent >/dev/null 2>&1; then
@@ -84,6 +95,10 @@ if [ "${INSTALL_CLAUDE:-}" = "1" ]; then
       rm -f "$tmp_skills"
     fi
   fi
+  case "${INSTALL_CLAUDE_CLI:-1}" in
+    0 | n | N | no | NO | false | FALSE) ;;
+    *) check "claude installed" command -v claude ;;
+  esac
   for f in .claude/statusline.sh \
            .claude/hooks/stop-failure.sh \
            .local/bin/cc-resume; do
@@ -92,6 +107,7 @@ if [ "${INSTALL_CLAUDE:-}" = "1" ]; then
   check "cc-resume executable"          test -x "$HOME/.local/bin/cc-resume"
   check "StopFailure hook registered"   claude_hook_registered
   check "statusLine registered"         claude_statusline_registered
+  check "resume watcher autostarts"     resume_autostart_enabled
   check "nvim learning plugin present"  test -f "$HOME/.config/nvim/plugin/learning.lua"
   check "learning loop enabled"         test -f "$HOME/.config/nvim/.learning-enabled"
 fi

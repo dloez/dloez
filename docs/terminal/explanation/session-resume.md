@@ -20,6 +20,16 @@ So `cc-resume` does not start anything. It waits for the limit to lift and then 
 
 The flow is: session stops on a rate limit → hook writes `~/.local/state/cc-resume/pending/<session>.json` → `cc-resume watch` sees the marker come due → herdr types the resume text into that pane → marker deleted.
 
+None of the three is a compiled program; they are `sh` scripts on `PATH`. The only compiled thing involved is Claude Code, which the installer now installs too rather than assuming you had it.
+
+## The watcher has to outlive the terminal that started it
+
+A watcher run by hand in a pane dies with that pane, and a rate limit that lifts at 4am is exactly when nobody is there to restart it. So it is registered with the platform's own supervisor: a systemd **user** unit on Linux and WSL, a launchd **LaunchAgent** on macOS. Both start it at login, restart it if it exits, and survive a reboot.
+
+The systemd side needs one extra step that is easy to miss: without `loginctl enable-linger`, the user manager is torn down when the last session ends, taking the watcher with it — so the installer enables lingering, and says which command to run by hand if that needs privileges. The launchd side needs a different concession: plists perform no `$HOME` expansion, so the plist is the one file in this repo that is generated from a template at install time instead of being symlinked out of the checkout.
+
+Because the watcher runs under a supervisor rather than in a shell, it gets no interactive `PATH`. Both units set one explicitly that includes `~/.local/bin`, which is where `herdr` lives — without that the watcher would start, find no `herdr`, and log `skipped / herdr_missing` forever.
+
 ## Why the status line is load-bearing
 
 The `StopFailure` payload says a session stopped and which session it was, but not when the limit lifts. That number reaches the machine through exactly one documented channel: the status line, which is fed `rate_limits.five_hour.resets_at` as Unix epoch seconds on every render. Caching it there is why the watcher can sleep until the reset plus a small buffer and knock once, rather than poll blindly.

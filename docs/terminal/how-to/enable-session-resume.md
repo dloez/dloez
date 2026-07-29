@@ -4,9 +4,9 @@ Pick a rate-limited Claude Code session back up automatically, in place, once th
 
 ## Prerequisites
 
-- The Claude Code layer installed — see [Bootstrap a machine](bootstrap-machine.md), step 9, or run the installer as below.
 - **herdr running, with your Claude sessions inside herdr panes.** The resume is delivered by typing into the pane, so a session started in a plain terminal cannot be resumed.
 - `jq` on `PATH` (the installer installs it).
+- On Linux and WSL, a systemd **user** session for the watcher to autostart under; on macOS, `launchctl`. Without either, the watcher has to be started by hand.
 - A Claude.ai Pro or Max subscription. The reset time comes from `rate_limits` in the status line, which is only sent to subscribers, and only after a session's first API response.
 
 ## Steps
@@ -21,13 +21,26 @@ Pick a rate-limited Claude Code session back up automatically, in place, once th
 
    **This sets your status line.** If you already have one, the installer keeps yours and warns; to run both, set `CC_STATUSLINE_DELEGATE` to your existing command and point `statusLine` at `~/.claude/statusline.sh`.
 
-2. Start the watcher in its own herdr pane:
+   The same run installs Claude Code itself if `claude` is not already on `PATH`, and registers the watcher to start on its own — a systemd user unit on Linux and WSL, a launchd LaunchAgent on macOS. **One watcher covers every session and every repo on the machine**, and nothing is resumed while it is not running.
+
+2. Confirm the watcher is running, and manage it if you need to:
+
+   **Linux / WSL**
 
    ```sh
-   cc-resume watch
+   systemctl --user status cc-resume        # is it running?
+   systemctl --user restart cc-resume       # after editing the script
+   journalctl --user -u cc-resume -f        # follow its output
    ```
 
-   One watcher covers every session and every repo on the machine. Nothing is resumed while it is not running.
+   **macOS**
+
+   ```sh
+   launchctl print "gui/$(id -u)/dev.dloez.cc-resume" | head -20
+   launchctl kickstart -k "gui/$(id -u)/dev.dloez.cc-resume"   # restart
+   ```
+
+   If the installer reported no systemd user session and no `launchctl`, run `cc-resume watch` yourself in a spare herdr pane instead.
 
 3. *Optional.* Set the text typed into a given repo, one line, instead of the default `continue`:
 
@@ -82,7 +95,7 @@ Read `~/.local/state/cc-resume/log.jsonl`; every decision is one line.
 | Only one of two sessions resumed | `coalesced` | Both markers targeted the same pane; one delivery is intentional. |
 | Watcher will not start | `a watcher is already running (pid N)` | Another watcher holds the lock. If that pid is dead the lock is reclaimed automatically. |
 
-To stop cleanly, `SIGTERM` the watcher — it exits immediately and releases its lock.
+To stop cleanly, `systemctl --user stop cc-resume` (or `launchctl bootout "gui/$(id -u)/dev.dloez.cc-resume"` on macOS). Either way it takes `SIGTERM`, exits immediately, and releases its lock. Restart it after editing the script — a running `sh` re-reads its own file as it executes, so an in-place edit can corrupt the running process.
 
 ---
 

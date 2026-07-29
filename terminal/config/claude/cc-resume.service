@@ -1,0 +1,14 @@
+[Unit]
+Description=Claude Code session resume watcher
+Documentation=https://github.com/dloez/dloez/blob/main/docs/terminal/explanation/session-resume.md
+After=default.target
+
+[Service]
+Type=simple
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=%h/.local/bin/cc-resume watch
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target
