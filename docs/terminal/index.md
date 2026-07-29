@@ -26,6 +26,7 @@ Portable zsh setup that bootstraps a fresh Linux, macOS, or WSL machine with one
 | Document | Type | Covers |
 |----------|------|--------|
 | [Bootstrap a machine](how-to/bootstrap-machine.md) | How-to | Run the one-command installer and verify the result. |
+| [Enable session resume](how-to/enable-session-resume.md) | How-to | Install the resume runtime, start the watcher, and smoke-test it without waiting for a real limit. |
 | [Async prompt design](explanation/async-prompt.md) | Explanation | Why the prompt renders in two paints and how the swap works. |
 | [Startup performance](explanation/startup-performance.md) | Explanation | Why interactive startup is fast: the global-compinit skip, compiled/cached sourcing, and the WSL rehash trap. |
 | [Session resume](explanation/session-resume.md) | Explanation | How a rate-limited Claude Code session is resumed in place, and why it types into the live pane instead of relaunching. |

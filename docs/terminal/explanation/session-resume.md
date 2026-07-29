@@ -34,10 +34,20 @@ Delivery is `herdr pane run <pane_id> <text>`, which submits the text and Enter 
 
 herdr cannot tell *why* an agent stopped: its states are `idle`/`working`/`blocked`/`done`/`unknown`, read from a screen snapshot, and it only reports `blocked` on recognised approval UI. So the trigger has to come from Claude Code's own hook, and the two halves meet in the marker file.
 
+## A rate-limited session is not sitting at a prompt
+
+This is the assumption the first version got wrong, and it cost a real double-send. When the limit is hit, Claude Code puts up a selection dialog titled **"What do you want to do?"** rather than returning to the prompt box. Typing text and Enter into that dialog does not submit a prompt — the Enter selects whichever option is highlighted.
+
+There are two such dialogs, both with the same title. The rate-limit menu offers **Stop and wait for limit to reset** (`cancel`), **Switch to usage credits** or **Add funds to continue with usage credits** (`extra-usage`), and **Upgrade your plan** (`upgrade`); a **Upgrade to Team plan** entry appears behind a flag. Ordering is not stable — "Stop and wait" is first by default but moves last under a feature flag — so which option a blind Enter would select cannot be predicted. The second dialog appears when a usage credit balance exists and leads with **Adjust monthly spend limit**, whose Enter path writes a new spend limit. That one is why blind Enter is unacceptable rather than merely untidy.
+
+So the watcher **looks before it types**. It reads the pane, and if the title string is present it sends `Escape` — which both dialogs wire to a benign cancel — waits `CC_RESUME_DIALOG_SETTLE` seconds, and reads again. Only once the dialog is gone does it type. If the dialog is still up, nothing is typed: the attempt is charged and the marker is retried later. A resume that cannot be delivered safely is not delivered at all.
+
 ## Guards
 
 - **The pane must still host an agent.** Before typing, the watcher checks `herdr agent list` for the recorded pane. If the pane is gone, or Claude exited and left a bare shell, the marker is dropped rather than typed into — otherwise `continue` would run as a shell command.
-- **One watcher at a time**, enforced by a lock directory at `~/.local/state/cc-resume/watch.lock`.
+- **One injection per pane per sweep.** Two markers can come due for the same pane at once — a real stop and a test marker, say, both stamped with the same reset time. The first is delivered and the rest are dropped with a `coalesced` log line, because typing the resume text twice is exactly the failure this guard exists to prevent.
+- **One watcher at a time**, enforced by a lock directory at `~/.local/state/cc-resume/watch.lock` holding the owner's pid. A lock whose pid is no longer alive is treated as stale and reclaimed, so a watcher killed with `SIGKILL` does not block every later start.
+- **Shutdown is prompt.** The poll runs as a background `sleep` the watcher `wait`s on, so `SIGTERM` is handled immediately instead of being queued behind a full poll interval.
 - **Attempts are capped** at `CC_RESUME_MAX_ATTEMPTS` (3), with a `CC_RESUME_BACKOFF` (1200s) delay that grows per attempt, so a session that cannot be resumed stops being retried.
 - **Markers expire** after `CC_RESUME_MAX_AGE` (24h), so a watcher started days later does not resume something long abandoned.
 - **Every decision is logged** as one JSON line to `~/.local/state/cc-resume/log.jsonl`.
@@ -54,7 +64,9 @@ The resume text is per-project and defaults to `continue`. A repo that wants som
 | `CC_RESUME_BACKOFF` | `1200` | Fallback delay when no reset time was cached, multiplied by attempt count. |
 | `CC_RESUME_MAX_ATTEMPTS` | `3` | Attempts before a marker is abandoned. |
 | `CC_RESUME_MAX_AGE` | `86400` | Seconds before a pending marker is dropped as stale. |
-| `CC_RESUME_DRY_RUN` | unset | Print what would be typed instead of typing it. |
+| `CC_RESUME_DIALOG_MARKER` | `What do you want to do?` | Title string that identifies Claude's usage dialog. |
+| `CC_RESUME_DIALOG_SETTLE` | `1` | Seconds to wait after sending Escape before re-reading the pane. |
+| `CC_RESUME_DRY_RUN` | unset | Print what would be typed instead of typing it. Reports whether the dialog is up. |
 | `CC_STATUSLINE_DELEGATE` | unset | Command the status line pipes its JSON to for rendering. |
 
 ## Settings registration

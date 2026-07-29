@@ -25,7 +25,7 @@ Set up the full zsh environment on a fresh Linux, macOS, or WSL machine with one
    6. Sets zsh as the default login shell (`chsh`), if it isn't already.
    7. On WSL, configures the font and Windows Terminal on the host — see [WSL host setup](../explanation/wsl-host-setup.md).
    8. Installs a recent Neovim into `~/.local` and clones the personal kickstart fork (`dloez/kickstart.nvim`) into `~/.config/nvim` if absent (part of the default setup; an existing config is left untouched).
-   9. Asks whether to set up the Claude Code layer — the essential skills (`.claude/skills/essential-skills.txt`) plus the nvim learning loop (opt-in). Answer `y` at the prompt, or set `INSTALL_CLAUDE=1` to run it without prompting. Skipped silently when there is no terminal to prompt on. See the [Claude Code setup](../reference/layout-and-testing.md).
+   9. Asks whether to set up the Claude Code layer — the essential skills (`.claude/skills/essential-skills.txt`), the session-resume runtime, and the nvim learning loop (opt-in). Answer `y` at the prompt, or set `INSTALL_CLAUDE=1` to run it without prompting. Skipped silently when there is no terminal to prompt on. See the [Claude Code setup](../reference/layout-and-testing.md) and [Enable session resume](enable-session-resume.md).
 
 2. Restart your shell to pick up the new setup:
 
