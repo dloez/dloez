@@ -20,7 +20,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
       - name: Shellcheck
-        run: shellcheck --severity=warning terminal/install.sh terminal/test.sh terminal/verify.sh
+        run: >
+          shellcheck --severity=warning
+          terminal/install.sh terminal/test.sh terminal/verify.sh
+          terminal/config/claude/cc-resume terminal/config/claude/statusline.sh
+          terminal/config/claude/hooks/stop-failure.sh
 
   ubuntu-test:
     runs-on: ubuntu-latest

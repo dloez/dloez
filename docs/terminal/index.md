@@ -11,7 +11,8 @@ Portable zsh setup that bootstraps a fresh Linux, macOS, or WSL machine with one
 - **History-substring search** — `↑`/`↓` walk only the history entries matching the typed prefix.
 - **herdr** — the mouse-first terminal multiplexer for AI coding agents (binary in `~/.local/bin`, config symlinked from the repo).
 - **Neovim + kickstart** — installs a recent Neovim into `~/.local` and clones the personal kickstart fork (`dloez/kickstart.nvim`) into `~/.config/nvim` (if absent) as part of the default setup. See [Layout and testing](reference/layout-and-testing.md).
-- **Optional Claude Code setup** — on request (install prompt or `INSTALL_CLAUDE=1`), symlinks the essential skills from `.claude/skills/essential-skills.txt` into `~/.claude/skills/` and enables the nvim learning loop (creates the `.learning-enabled` marker the fork's keylogger watches for). See [Layout and testing](reference/layout-and-testing.md).
+- **Optional Claude Code setup** — on request (install prompt or `INSTALL_CLAUDE=1`), symlinks the essential skills from `.claude/skills/essential-skills.txt` into `~/.claude/skills/`, installs the session-resume runtime, and enables the nvim learning loop (creates the `.learning-enabled` marker the fork's keylogger watches for). See [Layout and testing](reference/layout-and-testing.md).
+- **Claude Code session resume** — a rate-limited session is picked back up where it stopped: a `StopFailure` hook records the stop, the status line caches the quota reset time, and `cc-resume` types the resume text into that herdr pane once the limit lifts. No model is called to decide any of it. See [Session resume](explanation/session-resume.md).
 
 ## Design stance
 
@@ -27,6 +28,7 @@ Portable zsh setup that bootstraps a fresh Linux, macOS, or WSL machine with one
 | [Bootstrap a machine](how-to/bootstrap-machine.md) | How-to | Run the one-command installer and verify the result. |
 | [Async prompt design](explanation/async-prompt.md) | Explanation | Why the prompt renders in two paints and how the swap works. |
 | [Startup performance](explanation/startup-performance.md) | Explanation | Why interactive startup is fast: the global-compinit skip, compiled/cached sourcing, and the WSL rehash trap. |
+| [Session resume](explanation/session-resume.md) | Explanation | How a rate-limited Claude Code session is resumed in place, and why it types into the live pane instead of relaunching. |
 | [WSL host setup](explanation/wsl-host-setup.md) | Explanation | Why and how the installer configures the Windows host. |
 | [Interactive features](reference/interactive-features.md) | Reference | Completion, fzf keys, and history-substring search. |
 | [Layout and testing](reference/layout-and-testing.md) | Reference | Symlink map and the test/verify/lint/benchmark commands. |

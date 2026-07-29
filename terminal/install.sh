@@ -63,7 +63,7 @@ pkg_install() {
 
 ensure_deps() {
   set --
-  for c in git curl zsh; do
+  for c in git curl zsh jq; do
     command -v "$c" >/dev/null 2>&1 || set -- "$@" "$c"
   done
   if [ "$#" -eq 0 ]; then
@@ -413,6 +413,65 @@ link_skills() {
   done
 }
 
+link_claude_runtime() {
+  runtime_src="$REPO_ROOT/terminal/config/claude"
+  [ -d "$runtime_src" ] || return 0
+  info "Linking the Claude Code session-resume runtime"
+  link_file "$runtime_src/statusline.sh" "$HOME/.claude/statusline.sh"
+  link_file "$runtime_src/hooks/stop-failure.sh" "$HOME/.claude/hooks/stop-failure.sh"
+  link_file "$runtime_src/cc-resume" "$HOME/.local/bin/cc-resume"
+}
+
+register_claude_settings() {
+  settings="$HOME/.claude/settings.json"
+  hook="$HOME/.claude/hooks/stop-failure.sh"
+  statusline="$HOME/.claude/statusline.sh"
+
+  mkdir -p "$HOME/.claude"
+  [ -f "$settings" ] || printf '{}\n' >"$settings"
+
+  if ! jq -e . "$settings" >/dev/null 2>&1; then
+    warn "${settings#"$HOME"/} is not valid JSON — leaving it untouched"
+    return 0
+  fi
+
+  existing_statusline=$(jq -r '.statusLine.command // empty' "$settings")
+  case "$existing_statusline" in
+    '' | *statusline.sh) set_statusline=true ;;
+    *)
+      set_statusline=false
+      warn "keeping your existing statusLine — cc-resume cannot cache quota resets without ours"
+      warn "  to keep both, set CC_STATUSLINE_DELEGATE=$existing_statusline and point statusLine at $statusline"
+      ;;
+  esac
+
+  tmp="$settings.cc-resume.$$"
+  if jq --arg hook "$hook" \
+    --arg statusline "$statusline" \
+    --argjson set_statusline "$set_statusline" '
+      def strip_ours($event):
+        [ (.hooks[$event] // [])[]
+          | .hooks = [ (.hooks // [])[]
+              | select(((.command // "") | contains("stop-failure.sh")) | not) ]
+          | select((.hooks | length) > 0) ];
+      .hooks = (.hooks // {})
+      | .hooks.StopFailure = ( strip_ours("StopFailure") + [
+          {matcher: "rate_limit",
+           hooks: [{type: "command", command: ($hook + " rate_limit")}]},
+          {matcher: "overloaded",
+           hooks: [{type: "command", command: ($hook + " overloaded")}]} ])
+      | if $set_statusline
+        then .statusLine = {type: "command", command: $statusline}
+        else . end
+    ' "$settings" >"$tmp" 2>/dev/null; then
+    mv -f "$tmp" "$settings"
+    info "ok:     .claude/settings.json registers the StopFailure hook"
+  else
+    rm -f "$tmp"
+    warn "could not merge cc-resume entries into ${settings#"$HOME"/}"
+  fi
+}
+
 clone_kickstart() {
   nvim_cfg="$CONFIG_HOME/nvim"
   if [ -e "$nvim_cfg" ]; then
@@ -433,18 +492,24 @@ enable_learning_loop() {
   touch "$nvim_cfg/.learning-enabled"
 }
 
+claude_setup_steps() {
+  link_skills
+  link_claude_runtime
+  register_claude_settings
+  enable_learning_loop
+}
+
 setup_claude() {
   case "${INSTALL_CLAUDE:-ask}" in
     1 | y | Y | yes | YES | true | TRUE)
-      link_skills
-      enable_learning_loop
+      claude_setup_steps
       ;;
     ask)
       if (exec </dev/tty) 2>/dev/null; then
-        printf '\033[1;34m==>\033[0m Set up Claude Code (skills + nvim learning loop)? [y/N] ' >/dev/tty
+        printf '\033[1;34m==>\033[0m Set up Claude Code (skills + session resume + nvim learning loop)? [y/N] ' >/dev/tty
         read -r reply </dev/tty || reply=""
         case "$reply" in
-          y | Y | yes | YES) link_skills; enable_learning_loop ;;
+          y | Y | yes | YES) claude_setup_steps ;;
         esac
       fi
       ;;

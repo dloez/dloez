@@ -24,6 +24,17 @@ link_into_repo() {
   esac
 }
 
+claude_hook_registered() {
+  jq -e '[.hooks.StopFailure[]? | .hooks[]?
+          | select(((.command // "") | contains("stop-failure.sh")))] | length > 0' \
+    "$HOME/.claude/settings.json" >/dev/null 2>&1
+}
+
+claude_statusline_registered() {
+  jq -e '(.statusLine.command // "") | contains("statusline.sh")' \
+    "$HOME/.claude/settings.json" >/dev/null 2>&1
+}
+
 current_shell() {
   user=$(id -un)
   if command -v getent >/dev/null 2>&1; then
@@ -38,6 +49,7 @@ current_shell() {
 check "git installed"      command -v git
 check "curl installed"     command -v curl
 check "zsh installed"      command -v zsh
+check "jq installed"       command -v jq
 check "starship installed" test -x "$HOME/.local/bin/starship"
 check "fzf installed"      test -x "$HOME/.local/bin/fzf"
 check "herdr installed"    test -x "$HOME/.local/bin/herdr"
@@ -72,6 +84,14 @@ if [ "${INSTALL_CLAUDE:-}" = "1" ]; then
       rm -f "$tmp_skills"
     fi
   fi
+  for f in .claude/statusline.sh \
+           .claude/hooks/stop-failure.sh \
+           .local/bin/cc-resume; do
+    check "symlink $f" link_into_repo "$HOME/$f"
+  done
+  check "cc-resume executable"          test -x "$HOME/.local/bin/cc-resume"
+  check "StopFailure hook registered"   claude_hook_registered
+  check "statusLine registered"         claude_statusline_registered
   check "nvim learning plugin present"  test -f "$HOME/.config/nvim/plugin/learning.lua"
   check "learning loop enabled"         test -f "$HOME/.config/nvim/.learning-enabled"
 fi

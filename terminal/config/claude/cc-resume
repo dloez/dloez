@@ -1,0 +1,244 @@
+#!/usr/bin/env sh
+
+set -u
+
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/cc-resume"
+PENDING="$STATE_DIR/pending"
+LOG="$STATE_DIR/log.jsonl"
+LOCK="$STATE_DIR/watch.lock"
+
+POLL="${CC_RESUME_POLL:-60}"
+BUFFER="${CC_RESUME_BUFFER:-120}"
+BACKOFF="${CC_RESUME_BACKOFF:-1200}"
+MAX_ATTEMPTS="${CC_RESUME_MAX_ATTEMPTS:-3}"
+MAX_AGE="${CC_RESUME_MAX_AGE:-86400}"
+DEFAULT_TEXT="${CC_RESUME_TEXT:-continue}"
+
+usage() {
+  cat >&2 <<'EOF'
+Usage: cc-resume <command>
+
+  watch              Wait for rate-limited sessions and type the resume text into
+                     their herdr pane once the limit clears.
+  status             Show pending sessions and when each will be resumed.
+  fire <session>     Resume one pending session now, ignoring its timer.
+  clear [session]    Drop one pending session, or all of them.
+
+Per-project resume text: put one line in <repo>/.claude/on-resume.
+Defaults to "continue"; override globally with CC_RESUME_TEXT.
+Set CC_RESUME_DRY_RUN=1 to print what would be typed without typing it.
+EOF
+  exit 2
+}
+
+need_jq() {
+  command -v jq >/dev/null 2>&1 || {
+    printf 'cc-resume needs jq on PATH.\n' >&2
+    exit 1
+  }
+}
+
+now() { date +%s; }
+
+log_event() {
+  mkdir -p "$STATE_DIR" 2>/dev/null || return 0
+  jq -cn --arg at "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$@" '$ARGS.named' >>"$LOG" 2>/dev/null || true
+}
+
+markers() {
+  [ -d "$PENDING" ] || return 0
+  for m in "$PENDING"/*.json; do
+    [ -e "$m" ] || continue
+    printf '%s\n' "$m"
+  done
+}
+
+field() {
+  jq -r --arg k "$2" '.[$k] // empty' "$1" 2>/dev/null
+}
+
+target_at() {
+  jq -r --argjson buffer "$BUFFER" --argjson backoff "$BACKOFF" '
+    (.attempts // 0) as $attempts |
+    if (.resets_at | type) == "number" and $attempts == 0
+    then (.resets_at + $buffer)
+    else ((.stopped_at // 0) + $backoff * ($attempts + 1))
+    end | floor' "$1" 2>/dev/null
+}
+
+resume_text() {
+  file="$1/.claude/on-resume"
+  if [ -f "$file" ]; then
+    text=$(sed -n '1p' "$file" | sed 's/[[:space:]]*$//')
+    [ -n "$text" ] && {
+      printf '%s' "$text"
+      return 0
+    }
+  fi
+  printf '%s' "$DEFAULT_TEXT"
+}
+
+pane_has_agent() {
+  herdr agent list 2>/dev/null |
+    jq -e --arg p "$1" '.result.agents[]? | select(.pane_id == $p)' >/dev/null 2>&1
+}
+
+bump_attempts() {
+  tmp="$1.$$"
+  if jq '.attempts = ((.attempts // 0) + 1)' "$1" >"$tmp" 2>/dev/null; then
+    mv -f "$tmp" "$1" 2>/dev/null || rm -f "$tmp"
+  else
+    rm -f "$tmp"
+  fi
+}
+
+fire_marker() {
+  marker="$1"
+  session=$(field "$marker" session_id)
+  pane=$(field "$marker" pane_id)
+  cwd=$(field "$marker" cwd)
+  err=$(field "$marker" error)
+  attempts=$(jq -r '.attempts // 0' "$marker" 2>/dev/null)
+
+  if [ -z "$pane" ]; then
+    log_event --arg event dropped --arg reason no_pane_id --arg session "$session"
+    rm -f "$marker"
+    return 0
+  fi
+
+  if ! command -v herdr >/dev/null 2>&1; then
+    log_event --arg event skipped --arg reason herdr_missing --arg session "$session"
+    return 0
+  fi
+
+  if ! pane_has_agent "$pane"; then
+    log_event --arg event dropped --arg reason pane_gone \
+      --arg session "$session" --arg pane "$pane"
+    rm -f "$marker"
+    return 0
+  fi
+
+  text=$(resume_text "$cwd")
+
+  if [ "${CC_RESUME_DRY_RUN:-0}" != "0" ]; then
+    printf 'cc-resume: would type "%s" into %s (%s)\n' "$text" "$pane" "$cwd"
+    return 0
+  fi
+
+  if herdr pane run "$pane" "$text" >/dev/null 2>&1; then
+    log_event --arg event resumed --arg session "$session" --arg pane "$pane" \
+      --arg cwd "$cwd" --arg error "$err" --arg text "$text"
+    printf 'cc-resume: typed "%s" into %s (%s)\n' "$text" "$pane" "$cwd"
+    rm -f "$marker"
+    return 0
+  fi
+
+  bump_attempts "$marker"
+  if [ "$((attempts + 1))" -ge "$MAX_ATTEMPTS" ]; then
+    log_event --arg event gave_up --arg session "$session" --arg pane "$pane" \
+      --argjson attempts "$((attempts + 1))"
+    rm -f "$marker"
+  else
+    log_event --arg event retry --arg session "$session" --arg pane "$pane" \
+      --argjson attempts "$((attempts + 1))"
+  fi
+}
+
+sweep() {
+  t=$(now)
+  markers | while IFS= read -r marker; do
+    stopped=$(jq -r '.stopped_at // 0' "$marker" 2>/dev/null)
+    case "$stopped" in
+      '' | *[!0-9]*) stopped=0 ;;
+    esac
+    if [ "$stopped" -gt 0 ] && [ "$((t - stopped))" -gt "$MAX_AGE" ]; then
+      log_event --arg event dropped --arg reason stale \
+        --arg session "$(field "$marker" session_id)"
+      rm -f "$marker"
+      continue
+    fi
+
+    target=$(target_at "$marker")
+    case "$target" in
+      '' | *[!0-9]*) target=0 ;;
+    esac
+    [ "$t" -ge "$target" ] || continue
+    fire_marker "$marker"
+  done
+}
+
+cmd_watch() {
+  mkdir -p "$PENDING" 2>/dev/null || true
+  if ! mkdir "$LOCK" 2>/dev/null; then
+    printf 'cc-resume: another watcher holds %s\n' "$LOCK" >&2
+    exit 1
+  fi
+  trap 'rmdir "$LOCK" 2>/dev/null; exit 0' INT TERM HUP
+  trap 'rmdir "$LOCK" 2>/dev/null' EXIT
+
+  log_event --arg event watch_started --argjson poll "$POLL"
+  printf 'cc-resume: watching %s (poll %ss)\n' "$PENDING" "$POLL"
+  while :; do
+    sweep
+    sleep "$POLL"
+  done
+}
+
+cmd_status() {
+  if [ "$(markers | wc -l | tr -d ' ')" -eq 0 ]; then
+    printf 'cc-resume: nothing pending\n'
+    return 0
+  fi
+  t=$(now)
+  markers | while IFS= read -r marker; do
+    session=$(field "$marker" session_id)
+    pane=$(field "$marker" pane_id)
+    cwd=$(field "$marker" cwd)
+    err=$(field "$marker" error)
+    target=$(target_at "$marker")
+    case "$target" in
+      '' | *[!0-9]*) target=0 ;;
+    esac
+    if [ "$t" -ge "$target" ]; then
+      when='due now'
+    else
+      when="in $(((target - t) / 60))m"
+    fi
+    printf '%s  %s  pane=%s  %s  %s\n' "$err" "$when" "${pane:-none}" "$cwd" "$session"
+  done
+}
+
+cmd_fire() {
+  [ "$#" -eq 1 ] || usage
+  safe=$(printf '%s' "$1" | tr -c 'A-Za-z0-9._-' '_')
+  marker="$PENDING/$safe.json"
+  [ -f "$marker" ] || {
+    printf 'cc-resume: no pending session %s\n' "$1" >&2
+    exit 1
+  }
+  fire_marker "$marker"
+}
+
+cmd_clear() {
+  if [ "$#" -eq 1 ]; then
+    safe=$(printf '%s' "$1" | tr -c 'A-Za-z0-9._-' '_')
+    rm -f "$PENDING/$safe.json"
+    printf 'cc-resume: cleared %s\n' "$1"
+  else
+    markers | while IFS= read -r marker; do rm -f "$marker"; done
+    printf 'cc-resume: cleared all pending sessions\n'
+  fi
+}
+
+need_jq
+[ "$#" -ge 1 ] || usage
+command=$1
+shift
+
+case "$command" in
+  watch) cmd_watch "$@" ;;
+  status) cmd_status "$@" ;;
+  fire) cmd_fire "$@" ;;
+  clear) cmd_clear "$@" ;;
+  *) usage ;;
+esac

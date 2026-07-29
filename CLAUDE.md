@@ -59,7 +59,7 @@ Do NOT rely on private or session memory for durable rules. Anything that must p
 |---------|---------|
 | Terminal install test (clean container) | `sh terminal/test.sh` |
 | Terminal assertions | `sh terminal/verify.sh` |
-| Shell lint | `shellcheck --severity=warning terminal/install.sh terminal/test.sh terminal/verify.sh` |
+| Shell lint | `shellcheck --severity=warning terminal/install.sh terminal/test.sh terminal/verify.sh terminal/config/claude/cc-resume terminal/config/claude/statusline.sh terminal/config/claude/hooks/stop-failure.sh` |
 | Homelab (no test suite) | verify on the live cluster with `flux get kustomizations` |
 
 ## Plans
