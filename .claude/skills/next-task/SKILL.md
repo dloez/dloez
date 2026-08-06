@@ -98,24 +98,40 @@ If implementing turns up a gap, **decide which kind it is before stopping.** A g
 
 A fresh `general-purpose` agent. Not the step 2 verifier, not a fork.
 
+**Keep the `agentId` the spawn returns.** Round two continues that same agent and addresses it by that exact id. Agents spawned this way have no name, so `general-purpose` — the subagent *type* — is not a handle and addressing it will fail. Losing the id means round two cannot happen at all.
+
 Give it the entry as it stood and the diff (`git status`, `git diff`). Give it nothing about how the work went, what was hard, or what you believe you got right. Tell it to check and report, not to fix.
+
+**A finding is a claim to check, never a fact to adopt.** Tell the validator to write findings as what the diff must be checked against — "line 40 says both baselines read zero; only one baseline follows the rebuild, so verify the count" — and never as a correction to paste in. A validator that hands over a figure of its own invention gets it copied into the work unread, and then flags it as a defect on the next round: an error it created, propagated, and billed a round for catching. Whatever a validator asserts about the repo, the implementer confirms against the repo before acting on it.
+
+**The validator returns its verdict as its final message and messages nobody.** It has no one to notify: whoever is waiting on it receives its completion. A validator that tries to send its verdict onward is guessing at a handle it does not have, and the verdict goes missing while both agents wait.
 
 It checks: the entry is satisfied exactly, not approximately; the repo's own gate passes, run by it; no doc now contradicts the change; the repo's rules were followed; nothing outside the entry's scope was touched; no unauthorized file was created.
 
 **The repo decides what a validator is allowed to run, not this skill.** Read the gate out of `CLAUDE.md` and name that exact command in the prompt. Where a repo names one cheap command and rules out everything past it, that ruling holds: a validator that launches a long batch, a sweep or a simulation because "tests" sounded like it meant everything is burning the author's machine to re-confirm what the gate already covers. **A validator never re-takes a measurement to check a figure already reported** — it tests the reported figures against the diff for reasoning, units and scope, and says so when one does not follow. If the change cannot reach anything the gate measures, have it say why and skip the run rather than proving nothing at cost.
 
+**Blocking and non-blocking are different findings, and only one of them costs a round.** A figure that does not match the run, a claim untrue of the code, a dead link, a scope claim a reader would draw a different conclusion from, or the entry not actually satisfied — those are `DEFECTS` and the verdict is `fail`. Wording that is merely looser than it could be is a `NIT`: "over x" where the figure reads closer to x, a superlative true of the table it sits under but not of every table, a hedge that could be sharper. **A report whose findings are all nits is a `pass`.** Fix them before closing and do not spend a round on them.
+
+**This matters most on a docs-only diff**, where every finding is prose by construction. A validator holding prose to the standard of a figure turns each tightened sentence into another full re-read of the whole change, and the second read finds a third sentence, because there is always one more. Documentation has to be *right* — no wrong number, no false claim, no dead link — and that is what `DEFECTS` covers. It does not have to be optimally worded before an entry may close.
+
 ```
 VERDICT: pass | fail
-DEFECTS:
+DEFECTS:            (blocking — wrong figure, false claim, dead link, misleading scope, entry unsatisfied)
 - <file:line> — <what is wrong> — <what the entry asked for>
+NITS:               (non-blocking — wording that could be tighter, changing no conclusion)
+- <file:line> — <what would be tighter>
 UNVERIFIED: <what it could not check, and why>
 ```
 
 ## 6. Close out
 
-**Pass** → remove the entry, fix the file's counts and cross-references the way step 3 describes, report.
+**Pass** → fix any nits it listed, remove the entry, fix the file's counts and cross-references the way step 3 describes, report. **Nits are not re-checked** — a fixed nit that needed a second opinion was a defect and should have been reported as one.
 
-**Fail** → fix exactly the named defects and validate again with another fresh agent. Two rounds at most. Still failing, stop: the entry stays in the queue, the work stays uncommitted, and your report says plainly what fails and what you tried. Never remove an entry no validator has passed.
+**Fail** → confirm each named defect against the repo before touching anything, per the rule above, then fix exactly the ones that hold and say in your report if one did not. Then **send them back to the same validator rather than spawning a fresh one**. Continue it with `SendMessage`, addressed to the `agentId` from its spawn: it already holds the entry, the diff and its own findings, so it re-reads a delta instead of the whole change. Cold re-reads are what made rounds expensive, and a fresh agent re-reading everything is also what produces a new crop of unrelated wording notes each time. The context-free rule governs the *first* read, where a validator holding your conclusion is not a validator; round two asks only whether the named defects were fixed, which is the one question that validator is best placed to answer.
+
+**Then wait for it.** You are re-invoked when it finishes, so there is nothing to poll and nothing to report yet. Ending your turn to say a validator is still running abandons the pass mid-flight: the caller sees a finished agent, the queue entry neither closed nor marked, and someone has to reconstruct where you got to. Finish the pass — verdict, fixes, close-out, report — in the turn the notification wakes you into.
+
+**Two rounds at most.** Still failing on defects, stop: the entry stays in the queue, the work stays uncommitted, and your report says plainly what fails and what you tried. Never remove an entry whose defects a validator has not cleared. If the second round returns only nits, that is a pass — fix them and close.
 
 Do not commit unless the author asks, and never push. Say the work is ready and leave the commit to them. When `/work-queue` is driving, it commits between entries and will tell you so — that is its call, not yours.
 
