@@ -32,7 +32,7 @@ spec:
   storageClassName: longhorn-single-replica
   resources:
     requests:
-      storage: 150Gi
+      storage: 100Gi
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -124,6 +124,10 @@ spec:
             - '30303'
             - '--Network.DiscoveryPort'
             - '30303'
+            - '--Sync.AncientBodiesBarrier'
+            - '47000000'
+            - '--Sync.AncientReceiptsBarrier'
+            - '47000000'
             - '--HealthChecks.Enabled'
             - 'true'
             - '--Metrics.Enabled'
