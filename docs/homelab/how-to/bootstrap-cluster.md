@@ -4,11 +4,12 @@ Bring `tom` up from bare Talos nodes to a Flux install reconciling this repo. Ru
 
 ## Prerequisites
 
-- Both nodes booted on **Talos 1.10**. Talos ships no CM5 image, so flash the [community build](https://github.com/talos-rpi5/talos-builder/releases) to each node's NVMe.
+- Both nodes booted on **Talos 1.13**. Talos ships no CM5 image, so flash the [yama6a community build](https://github.com/yama6a/talos-raspberry-pi5/releases) (raw disk image; tracks upstream Talos, bundles `iscsi-tools` for Longhorn) to each node's NVMe.
+- `talosctl` matching the image's Talos version (client and node must be within one minor).
 - A Talos `secrets.yaml` in `homelab/infrastructure/talos/tom/`, generated with:
 
   ```sh
-  talosctl gen secrets --talos-version=1.10
+  talosctl gen secrets --talos-version=1.13
   ```
 
   It is gitignored — keep it out of commits.
@@ -19,7 +20,14 @@ Bring `tom` up from bare Talos nodes to a Flux install reconciling this repo. Ru
 ## Steps
 
 1. Flash the community Talos image to every NVMe drive and boot the nodes.
-2. Find the DHCP addresses of the two nodes and export them:
+2. Find the DHCP addresses of the two nodes and export them. Scan the LAN and probe candidates — a Talos node in maintenance mode answers the insecure version call on its API port:
+
+   ```sh
+   nmap -sn 192.168.1.0/24
+   talosctl version --insecure --nodes <candidate IP>
+   ```
+
+   The probe returns the server's Talos version (confirming it is the freshly flashed node and which image it booted) and errors on anything else on the network. Then:
 
    ```sh
    export CONTROLPLANE_IP=<IP>
@@ -29,7 +37,7 @@ Bring `tom` up from bare Talos nodes to a Flux install reconciling this repo. Ru
 3. From `homelab/infrastructure/talos/tom/`, generate the configs, apply them, and bootstrap etcd:
 
    ```sh
-   talosctl gen config tom https://192.168.1.10:6443 --talos-version 1.10 --with-secrets secrets.yaml --config-patch-control-plane @controlplane1.patch.yaml --config-patch-worker @worker1.patch.yaml --config-patch @base.patch.yaml
+   talosctl gen config tom https://192.168.1.10:6443 --talos-version 1.13 --with-secrets secrets.yaml --config-patch-control-plane @controlplane1.patch.yaml --config-patch-worker @worker1.patch.yaml --config-patch @base.patch.yaml
    talosctl apply-config --insecure --nodes $CONTROLPLANE_IP --file controlplane.yaml
    talosctl apply-config --insecure --nodes $WORKER_IP --file worker.yaml
    talosctl --talosconfig ./talosconfig config endpoints 192.168.1.10

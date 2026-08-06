@@ -7,7 +7,7 @@ GitOps Kubernetes homelab: bare Talos nodes reconciled to a git-declared desired
 - **Topology:** one control plane + one worker.
   - `controlplane1.tom` — `192.168.1.10`
   - `worker1.tom` — `192.168.1.11`
-- **OS:** Talos Linux 1.10 (immutable, API-driven). Talos ships no CM5 image, so a [community build](https://github.com/talos-rpi5/talos-builder/releases) is used.
+- **OS:** Talos Linux 1.13 (immutable, API-driven). Talos ships no CM5 image, so the [yama6a community build](https://github.com/yama6a/talos-raspberry-pi5/releases) is used (tracks upstream Talos, bundles `iscsi-tools` for Longhorn).
 - **Hardware:** 2× Raspberry Pi CM5 on 2× [Compute Blades](https://computeblade.com/) with TPM (secure boot) and RTC.
 - **Stack:** Talos + Flux CD + Kustomize + Helm.
 

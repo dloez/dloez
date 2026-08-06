@@ -5,7 +5,7 @@ Austere lookup for terms, hostnames, and conventions used across `homelab/`.
 | Term | Definition |
 |------|------------|
 | **tom** | The single Kubernetes cluster in this repo (named after the owner's cat). One control plane + one worker. Flux entrypoint: `homelab/clusters/tom/`. |
-| **Talos** | Talos Linux — the immutable, API-managed OS the nodes run (v1.10, community CM5 build). No SSH or shell; configured entirely via `talosctl` and machine-config YAML. |
+| **Talos** | Talos Linux — the immutable, API-managed OS the nodes run (v1.13, [yama6a community CM5 build](https://github.com/yama6a/talos-raspberry-pi5)). No SSH or shell; configured entirely via `talosctl` and machine-config YAML. |
 | **Flux** | Flux CD — the GitOps controller set. Watches this repo and reconciles the cluster to match `homelab/`. |
 | **Kustomization (Flux)** | A `kustomize.toolkit.fluxcd.io` resource telling Flux to apply a repo path, with `dependsOn`, `wait`, `interval`, and `prune`. The four in `clusters/tom` drive the reconcile chain. |
 | **`kustomization.yaml`** | The upstream Kustomize file (`kustomize.config.k8s.io`) listing the `resources:` in a directory. Plain manifest bundling — not a Flux resource. |
