@@ -32,3 +32,6 @@ spec:
         kind: HelmRepository
         name: longhorn
         namespace: longhorn-system
+  values:
+    defaultSettings:
+      engineReplicaTimeout: 30
