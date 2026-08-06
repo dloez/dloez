@@ -104,8 +104,6 @@ spec:
       labels:
         app: nethermind
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: worker1
       containers:
         - name: nethermind
           image: nethermind/nethermind:1.39.2
@@ -223,8 +221,6 @@ spec:
       labels:
         app: lighthouse-beacon
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: worker1
       containers:
         - name: lighthouse-beacon
           image: sigp/lighthouse:v8.2.1
@@ -344,8 +340,6 @@ spec:
       labels:
         app: lighthouse-validator
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: worker1
       initContainers:
         - name: import-keys
           image: sigp/lighthouse:v8.2.1
