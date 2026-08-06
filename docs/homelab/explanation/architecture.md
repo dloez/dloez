@@ -20,6 +20,7 @@ Each stage produces the API types or running controllers the next one needs, so 
 - The first three stages set `wait: true`, so Flux blocks until each is *Ready* — CRDs established, HelmReleases healthy — before starting the next. This trades a slower first bootstrap for a deterministic one: a config CR applied before its controller exists would only error and retry-loop.
 - Ordering is enforced by `dependsOn`, not filesystem layout — the split into `crds` / `controllers` / `config` directories mirrors the three phases so the boundary is obvious.
 - cert-manager's own CRDs ship with its Helm chart (`crds.enabled: true`), so only Gateway API CRDs need the dedicated first stage.
+- **The Gateway API bundle version is coupled to Traefik's minor version.** Traefik pins the spec version it supports (v3.6 → Gateway API v1.4, standard channel) and its provider silently stops programming Gateways when a CRD it watches is missing — the symptom is every `Gateway` stuck at `Waiting for controller` and Traefik serving its default self-signed certificate. Bump the `standard-install.yaml` URL in `crds/gateway-api/` in the same change as any Traefik chart major.
 
 ## Secret flow
 
