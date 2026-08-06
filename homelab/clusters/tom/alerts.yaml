@@ -1,20 +1,4 @@
 ---
-apiVersion: external-secrets.io/v1
-kind: ExternalSecret
-metadata:
-  name: discord-webhook
-  namespace: flux-system
-spec:
-  secretStoreRef:
-    kind: ClusterSecretStore
-    name: 1password
-  target:
-    creationPolicy: Owner
-  data:
-    - secretKey: address
-      remoteRef:
-        key: Discord webhook/password
----
 apiVersion: notification.toolkit.fluxcd.io/v1beta3
 kind: Provider
 metadata:

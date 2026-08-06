@@ -33,6 +33,7 @@ Decisions:
 
 - **One human-provided secret.** Everything else derives from the vault, so rotating a credential happens in 1Password and propagates on the next sync — nothing to re-commit.
 - **ESO must be up before any `ExternalSecret`**, which is why external-secrets is a controller (stage 2) and the store is a config (stage 3).
+- **No `ExternalSecret` may live in `clusters/tom/`.** The flux-system Kustomization dry-runs everything it applies, so on a fresh cluster an `ExternalSecret` there fails validation before ESO's CRDs exist and deadlocks the entire chain at bootstrap. The Discord-webhook `ExternalSecret` therefore lives in the config stage (`config/flux-discord-webhook.yaml`); `alerts.yaml` keeps only the `Provider`/`Alert`, whose CRDs ship with Flux itself.
 
 ## Ingress and TLS
 

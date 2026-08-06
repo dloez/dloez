@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - 1password-cluster-secret-store.yaml
   - cf-cluster-issuer.yaml
+  - flux-discord-webhook.yaml
   - ip-pools.yaml
   - traefik-service.yaml
   - longhorn-gateway.yaml
