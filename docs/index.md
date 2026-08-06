@@ -32,7 +32,7 @@ Portable zsh/starship dotfiles, a one-command bootstrap, and CI.
 | [terminal/index.md](terminal/index.md) | Index | Overview of the terminal area and its docs. |
 | [terminal/explanation/async-prompt.md](terminal/explanation/async-prompt.md) | Explanation | Why the prompt renders in two passes (pure-zsh first paint + background git). |
 | [terminal/explanation/wsl-host-setup.md](terminal/explanation/wsl-host-setup.md) | Explanation | Why and how bootstrap touches the Windows host under WSL. |
-| [terminal/explanation/session-resume.md](terminal/explanation/session-resume.md) | Explanation | How a rate-limited Claude Code session resumes in place via a StopFailure hook, the status line quota cache, and `cc-resume`. |
+| [terminal/explanation/session-resume.md](terminal/explanation/session-resume.md) | Explanation | How a rate-limited Claude Code session resumes in place via the `StopFailure` and `Stop` hooks, the status line quota cache, and `cc-resume`. |
 | [terminal/reference/layout-and-testing.md](terminal/reference/layout-and-testing.md) | Reference | Config-to-`$HOME` symlink map and the test/verify commands. |
 | [terminal/how-to/bootstrap-machine.md](terminal/how-to/bootstrap-machine.md) | How-to | Bootstrap a fresh Linux/macOS/WSL machine. |
 | [terminal/how-to/enable-session-resume.md](terminal/how-to/enable-session-resume.md) | How-to | Turn on Claude Code session resume and verify it without waiting for a real limit. |

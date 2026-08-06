@@ -30,6 +30,12 @@ claude_hook_registered() {
     "$HOME/.claude/settings.json" >/dev/null 2>&1
 }
 
+claude_stop_hook_registered() {
+  jq -e '[.hooks.Stop[]? | .hooks[]?
+          | select(((.command // "") | contains("stop-failure.sh subagent_limit")))] | length > 0' \
+    "$HOME/.claude/settings.json" >/dev/null 2>&1
+}
+
 claude_statusline_registered() {
   jq -e '(.statusLine.command // "") | contains("statusline.sh")' \
     "$HOME/.claude/settings.json" >/dev/null 2>&1
@@ -106,6 +112,7 @@ if [ "${INSTALL_CLAUDE:-}" = "1" ]; then
   done
   check "cc-resume executable"          test -x "$HOME/.local/bin/cc-resume"
   check "StopFailure hook registered"   claude_hook_registered
+  check "Stop hook registered"          claude_stop_hook_registered
   check "statusLine registered"         claude_statusline_registered
   check "resume watcher autostarts"     resume_autostart_enabled
   check "nvim learning plugin present"  test -f "$HOME/.config/nvim/plugin/learning.lua"

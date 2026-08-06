@@ -554,12 +554,14 @@ register_claude_settings() {
            hooks: [{type: "command", command: ($hook + " rate_limit")}]},
           {matcher: "overloaded",
            hooks: [{type: "command", command: ($hook + " overloaded")}]} ])
+      | .hooks.Stop = ( strip_ours("Stop") + [
+          {hooks: [{type: "command", command: ($hook + " subagent_limit")}]} ])
       | if $set_statusline
         then .statusLine = {type: "command", command: $statusline}
         else . end
     ' "$settings" >"$tmp" 2>/dev/null; then
     mv -f "$tmp" "$settings"
-    info "ok:     .claude/settings.json registers the StopFailure hook"
+    info "ok:     .claude/settings.json registers the StopFailure and Stop hooks"
   else
     rm -f "$tmp"
     warn "could not merge cc-resume entries into ${settings#"$HOME"/}"
