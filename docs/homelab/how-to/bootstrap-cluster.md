@@ -74,6 +74,14 @@ Bring `tom` up from bare Talos nodes to a Flux install reconciling this repo. Ru
    flux get kustomizations --watch
    ```
 
+7. Once Longhorn is up (`infra-platform-controllers` Ready), register the worker's data disk with it — Longhorn only auto-registers its default disk (`/var/lib/longhorn/`, on the 100 GB `EPHEMERAL` volume), and the 895 GB `persistent-cluster-data` Talos user volume must be added to the Longhorn node by hand:
+
+   ```sh
+   kubectl patch nodes.longhorn.io worker1 -n longhorn-system --type merge -p '{"spec":{"disks":{"persistent-cluster-data":{"allowScheduling":true,"diskType":"filesystem","evictionRequested":false,"path":"/var/mnt/persistent-cluster-data","storageReserved":0,"tags":[]}}}}'
+   ```
+
+   Skipping this step leaves large PVCs unschedulable (`precheck new replica failed: insufficient storage`, volumes `faulted`).
+
 ## Verification
 
 - Talos reports healthy:

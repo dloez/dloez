@@ -65,7 +65,7 @@ Decisions:
 
 `apps/tom/gnosis.yaml` runs a Gnosis Chain validator: Nethermind (execution) + Lighthouse beacon (consensus) + Lighthouse validator client, deposit flow in the [how-to](../how-to/deploy-gnosis-validator.md). Its shape breaks a few repo habits on purpose:
 
-- **Pinned to `worker1` with `nodeSelector`.** Longhorn attaches volumes over iSCSI from any node; a chain database doing constant random I/O must sit on the node that physically holds the replica, or sync falls behind.
+- **Not pinned to a node — the control-plane taint does the placement.** With `controlplane1` tainted `NoSchedule`, worker1 is the only schedulable node, which keeps the chain database on the node that physically holds its Longhorn replica. If a second worker ever joins, enforce locality with Longhorn `dataLocality: strict-local` rather than pod pinning — a chain DB attached over iSCSI from another node falls behind chain head.
 - **`replicas: 1` + `strategy: Recreate` + doppelganger protection on the validator client.** Two live signers with the same key is the one slashable offence. This workload must never be made "highly available" — the rolling-update overlap of a default Deployment is exactly the failure mode.
 - **p2p over `hostPort`** (30303 execution, 9000/9001 beacon) instead of a MetalLB service: peers need the node's real address, and one worker means no scheduling constraint cost. Inbound peering also works without router port-forwards (outbound dialing suffices), just with fewer peers.
 - **No Gateway/HTTPRoute.** Nothing here is a web app; the engine and beacon APIs stay cluster-internal.
@@ -77,6 +77,7 @@ Longhorn provides dynamic block storage. The default `StorageClass`, `longhorn-s
 
 - With a **single worker**, cross-node replication is impossible — extra replicas would only duplicate data on the same disk. One replica is the honest setting and saves space.
 - Trade-off: no in-cluster redundancy; losing the worker's disk loses volume data. Acceptable for a homelab, and the worker reserves an 895 GB Talos user volume (`persistent-cluster-data`) for it.
+- **The `persistent-cluster-data` disk is registered with Longhorn imperatively, not via GitOps** — Longhorn's `Node` CR is created at runtime by the manager, so the disk is added by a `kubectl patch` in the [bootstrap how-to](../how-to/bootstrap-cluster.md) (step 7). This is the one post-bootstrap manual step besides the 1Password token seed; forgetting it faults every PVC larger than the 100 GB default disk.
 
 ---
 
