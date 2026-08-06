@@ -30,7 +30,6 @@ Do NOT rely on private or session memory for durable rules. Anything that must p
 |------|------|------|
 | `homelab/` | Talos + Flux GitOps k8s, one cluster `tom`. | [homelab/CLAUDE.md](homelab/CLAUDE.md), [docs/homelab/](docs/homelab/index.md) |
 | `terminal/` | Portable zsh/starship dotfiles + `install.sh` bootstrap + CI. | [terminal/CLAUDE.md](terminal/CLAUDE.md), [docs/terminal/](docs/terminal/index.md) |
-| `raycast-scripts/` | macOS + Windows Raycast launchers for the `tdo` CLI. | [docs/raycast/](docs/raycast/index.md) |
 | `scripts/` | Repo tooling (e.g. `add-yaml-markers.sh`), run by CI. | [docs/general/reference/ci.md](docs/general/reference/ci.md) |
 
 ## Commit & PR Conventions

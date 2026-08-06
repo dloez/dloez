@@ -37,14 +37,6 @@ Portable zsh/starship dotfiles, a one-command bootstrap, and CI.
 | [terminal/how-to/bootstrap-machine.md](terminal/how-to/bootstrap-machine.md) | How-to | Bootstrap a fresh Linux/macOS/WSL machine. |
 | [terminal/how-to/enable-session-resume.md](terminal/how-to/enable-session-resume.md) | How-to | Turn on Claude Code session resume and verify it without waiting for a real limit. |
 
-## Raycast
-
-macOS + Windows Raycast launchers for the `tdo` CLI.
-
-| Document | Type | Description |
-|----------|------|-------------|
-| [raycast/index.md](raycast/index.md) | Index | Overview of the Raycast launcher scripts. |
-
 ## General
 
 Repo-wide conventions and CI, shared by every area.
