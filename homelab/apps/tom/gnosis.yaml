@@ -1,0 +1,431 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gnosis
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/audit: privileged
+    pod-security.kubernetes.io/warn: privileged
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nethermind-data
+  namespace: gnosis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-single-replica
+  resources:
+    requests:
+      storage: 400Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lighthouse-beacon-data
+  namespace: gnosis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-single-replica
+  resources:
+    requests:
+      storage: 150Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lighthouse-validator-data
+  namespace: gnosis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn-single-replica
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: gnosis-jwt
+  namespace: gnosis
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: 1password
+  target:
+    creationPolicy: Owner
+  data:
+    - secretKey: jwt.hex
+      remoteRef:
+        key: gnosis/jwt
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: gnosis-validator-keys
+  namespace: gnosis
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: 1password
+  target:
+    creationPolicy: Owner
+  data:
+    - secretKey: keystore-0.json
+      remoteRef:
+        key: gnosis/keystore-0
+    - secretKey: password.txt
+      remoteRef:
+        key: gnosis/keystore-password
+    - secretKey: fee-recipient
+      remoteRef:
+        key: gnosis/fee-recipient
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nethermind
+  namespace: gnosis
+  labels:
+    app: nethermind
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nethermind
+  template:
+    metadata:
+      labels:
+        app: nethermind
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: worker1
+      containers:
+        - name: nethermind
+          image: nethermind/nethermind:1.39.2
+          args:
+            - '--config'
+            - 'gnosis'
+            - '--datadir'
+            - '/data'
+            - '--JsonRpc.Host'
+            - '0.0.0.0'
+            - '--JsonRpc.EngineHost'
+            - '0.0.0.0'
+            - '--JsonRpc.EnginePort'
+            - '8551'
+            - '--JsonRpc.JwtSecretFile'
+            - '/secrets/jwt.hex'
+            - '--Network.P2PPort'
+            - '30303'
+            - '--Network.DiscoveryPort'
+            - '30303'
+            - '--HealthChecks.Enabled'
+            - 'true'
+            - '--Metrics.Enabled'
+            - 'true'
+            - '--Metrics.ExposePort'
+            - '6060'
+          ports:
+            - containerPort: 30303
+              hostPort: 30303
+              protocol: TCP
+              name: p2p-tcp
+            - containerPort: 30303
+              hostPort: 30303
+              protocol: UDP
+              name: p2p-udp
+            - containerPort: 8551
+              protocol: TCP
+              name: engine
+            - containerPort: 8545
+              protocol: TCP
+              name: rpc
+            - containerPort: 6060
+              protocol: TCP
+              name: metrics
+          volumeMounts:
+            - name: nethermind-data
+              mountPath: /data
+            - name: jwt
+              mountPath: /secrets
+              readOnly: true
+          livenessProbe:
+            tcpSocket:
+              port: 8551
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 10
+          resources:
+            requests:
+              memory: '4Gi'
+              cpu: '1'
+            limits:
+              memory: '7Gi'
+              cpu: '3'
+      volumes:
+        - name: nethermind-data
+          persistentVolumeClaim:
+            claimName: nethermind-data
+        - name: jwt
+          secret:
+            secretName: gnosis-jwt
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nethermind
+  namespace: gnosis
+  labels:
+    app: nethermind
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8551
+      targetPort: 8551
+      protocol: TCP
+      name: engine
+    - port: 8545
+      targetPort: 8545
+      protocol: TCP
+      name: rpc
+    - port: 6060
+      targetPort: 6060
+      protocol: TCP
+      name: metrics
+  selector:
+    app: nethermind
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lighthouse-beacon
+  namespace: gnosis
+  labels:
+    app: lighthouse-beacon
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: lighthouse-beacon
+  template:
+    metadata:
+      labels:
+        app: lighthouse-beacon
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: worker1
+      containers:
+        - name: lighthouse-beacon
+          image: sigp/lighthouse:v8.2.1
+          args:
+            - 'lighthouse'
+            - 'bn'
+            - '--network'
+            - 'gnosis'
+            - '--datadir'
+            - '/data'
+            - '--execution-endpoint'
+            - 'http://nethermind:8551'
+            - '--execution-jwt'
+            - '/secrets/jwt.hex'
+            - '--checkpoint-sync-url'
+            - 'https://checkpoint.gnosischain.com'
+            - '--port'
+            - '9000'
+            - '--quic-port'
+            - '9001'
+            - '--disable-upnp'
+            - '--http'
+            - '--http-address'
+            - '0.0.0.0'
+            - '--http-port'
+            - '5052'
+            - '--metrics'
+            - '--metrics-address'
+            - '0.0.0.0'
+            - '--metrics-port'
+            - '5054'
+          ports:
+            - containerPort: 9000
+              hostPort: 9000
+              protocol: TCP
+              name: p2p-tcp
+            - containerPort: 9000
+              hostPort: 9000
+              protocol: UDP
+              name: p2p-udp
+            - containerPort: 9001
+              hostPort: 9001
+              protocol: UDP
+              name: p2p-quic
+            - containerPort: 5052
+              protocol: TCP
+              name: http
+            - containerPort: 5054
+              protocol: TCP
+              name: metrics
+          volumeMounts:
+            - name: lighthouse-beacon-data
+              mountPath: /data
+            - name: jwt
+              mountPath: /secrets
+              readOnly: true
+          livenessProbe:
+            tcpSocket:
+              port: 5052
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 10
+          resources:
+            requests:
+              memory: '2Gi'
+              cpu: '500m'
+            limits:
+              memory: '4Gi'
+              cpu: '2'
+      volumes:
+        - name: lighthouse-beacon-data
+          persistentVolumeClaim:
+            claimName: lighthouse-beacon-data
+        - name: jwt
+          secret:
+            secretName: gnosis-jwt
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lighthouse-beacon
+  namespace: gnosis
+  labels:
+    app: lighthouse-beacon
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5052
+      targetPort: 5052
+      protocol: TCP
+      name: http
+    - port: 5054
+      targetPort: 5054
+      protocol: TCP
+      name: metrics
+  selector:
+    app: lighthouse-beacon
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lighthouse-validator
+  namespace: gnosis
+  labels:
+    app: lighthouse-validator
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: lighthouse-validator
+  template:
+    metadata:
+      labels:
+        app: lighthouse-validator
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: worker1
+      initContainers:
+        - name: import-keys
+          image: sigp/lighthouse:v8.2.1
+          args:
+            - 'lighthouse'
+            - 'account'
+            - 'validator'
+            - 'import'
+            - '--network'
+            - 'gnosis'
+            - '--datadir'
+            - '/data'
+            - '--directory'
+            - '/keystores'
+            - '--password-file'
+            - '/password/password.txt'
+            - '--reuse-password'
+          volumeMounts:
+            - name: lighthouse-validator-data
+              mountPath: /data
+            - name: keystores
+              mountPath: /keystores
+              readOnly: true
+            - name: password
+              mountPath: /password
+              readOnly: true
+      containers:
+        - name: lighthouse-validator
+          image: sigp/lighthouse:v8.2.1
+          args:
+            - 'lighthouse'
+            - 'vc'
+            - '--network'
+            - 'gnosis'
+            - '--datadir'
+            - '/data'
+            - '--beacon-nodes'
+            - 'http://lighthouse-beacon:5052'
+            - '--suggested-fee-recipient'
+            - '$(FEE_RECIPIENT)'
+            - '--enable-doppelganger-protection'
+            - '--metrics'
+            - '--metrics-address'
+            - '0.0.0.0'
+            - '--metrics-port'
+            - '5064'
+          env:
+            - name: FEE_RECIPIENT
+              valueFrom:
+                secretKeyRef:
+                  name: gnosis-validator-keys
+                  key: fee-recipient
+          ports:
+            - containerPort: 5064
+              protocol: TCP
+              name: metrics
+          volumeMounts:
+            - name: lighthouse-validator-data
+              mountPath: /data
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '100m'
+            limits:
+              memory: '1Gi'
+              cpu: '500m'
+      volumes:
+        - name: lighthouse-validator-data
+          persistentVolumeClaim:
+            claimName: lighthouse-validator-data
+        - name: keystores
+          secret:
+            secretName: gnosis-validator-keys
+            items:
+              - key: keystore-0.json
+                path: keystore-0.json
+        - name: password
+          secret:
+            secretName: gnosis-validator-keys
+            items:
+              - key: password.txt
+                path: password.txt
+      restartPolicy: Always

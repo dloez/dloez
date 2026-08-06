@@ -20,6 +20,9 @@ Austere lookup for terms, hostnames, and conventions used across `homelab/`.
 | **ImageUpdateAutomation** | Flux resource that rewrites the `# {"$imagepolicy": ...}`-marked tag in the repo and pushes the change to an image-automation branch. |
 | **`image-automation-<cluster>-<app>`** | Branch naming for Flux image bumps (e.g. `image-automation-tom-pihole`). CI parses it into a PR title and deletes the branch on merge. |
 | **`controlplane1.tom` / `worker1.tom`** | The two node hostnames, set by the Talos patches. Static IPs `192.168.1.10` (control plane) and `192.168.1.11` (worker). |
+| **gnosis (app)** | The Gnosis Chain validator stack in `apps/tom/gnosis.yaml`: Nethermind (execution client), Lighthouse beacon (consensus client), Lighthouse validator client (signs with the staked keys). 1 GNO staked per validator key. |
+| **JWT secret (gnosis)** | Shared random hex that authenticates the Nethermind↔Lighthouse engine-API connection. Field `jwt` on the `gnosis` 1Password item. |
+| **Doppelganger protection** | Lighthouse start-up guard: the validator client stays silent for 2–3 epochs to detect another instance signing with the same keys before it begins attesting. Always on here. |
 | **`<app>.dloez.dev`** | Public hostname pattern for each web app (`pihole.dloez.dev`, `longhorn.dloez.dev`), served over HTTPS via Traefik with a cert-manager certificate. |
 
 ---

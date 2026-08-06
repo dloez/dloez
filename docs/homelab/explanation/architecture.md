@@ -15,7 +15,7 @@ Each stage produces the API types or running controllers the next one needs, so 
 | crds | `infrastructure/platform/crds` | Gateway API CRDs + Traefik gateway RBAC | controllers install resources of these kinds. |
 | controllers | `infrastructure/platform/controllers` | external-secrets, cert-manager, MetalLB, Traefik, Longhorn (Helm) | configs are custom resources those controllers own. |
 | configs | `infrastructure/platform/config` | `ClusterSecretStore`, `ClusterIssuer`, MetalLB pools, Traefik service, Longhorn `StorageClass` + gateway | apps consume all of these. |
-| apps | `apps/tom` | pihole | — |
+| apps | `apps/tom` | pihole, gnosis | — |
 
 - The first three stages set `wait: true`, so Flux blocks until each is *Ready* — CRDs established, HelmReleases healthy — before starting the next. This trades a slower first bootstrap for a deterministic one: a config CR applied before its controller exists would only error and retry-loop.
 - Ordering is enforced by `dependsOn`, not filesystem layout — the split into `crds` / `controllers` / `config` directories mirrors the three phases so the boundary is obvious.
@@ -60,6 +60,16 @@ Decisions:
 
 - **PR-gated, not auto-merged.** A homelab still wants a human glance at an image bump before it hits the only DNS server on the network.
 - The `image-automation-<cluster>-<app>` convention encodes enough for CI to generate the PR title and to scope branch cleanup.
+
+## The gnosis staking app
+
+`apps/tom/gnosis.yaml` runs a Gnosis Chain validator: Nethermind (execution) + Lighthouse beacon (consensus) + Lighthouse validator client, deposit flow in the [how-to](../how-to/deploy-gnosis-validator.md). Its shape breaks a few repo habits on purpose:
+
+- **Pinned to `worker1` with `nodeSelector`.** Longhorn attaches volumes over iSCSI from any node; a chain database doing constant random I/O must sit on the node that physically holds the replica, or sync falls behind.
+- **`replicas: 1` + `strategy: Recreate` + doppelganger protection on the validator client.** Two live signers with the same key is the one slashable offence. This workload must never be made "highly available" — the rolling-update overlap of a default Deployment is exactly the failure mode.
+- **p2p over `hostPort`** (30303 execution, 9000/9001 beacon) instead of a MetalLB service: peers need the node's real address, and one worker means no scheduling constraint cost. Inbound peering also works without router port-forwards (outbound dialing suffices), just with fewer peers.
+- **No Gateway/HTTPRoute.** Nothing here is a web app; the engine and beacon APIs stay cluster-internal.
+- **Key material follows the standard ESO flow** — keystores, password, JWT, and fee recipient live in the 1Password vault and materialize as Secrets. The mnemonic that generated the keys never touches the cluster or 1Password; it exists only on paper.
 
 ## Storage
 
