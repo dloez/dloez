@@ -27,7 +27,7 @@ GitOps Kubernetes homelab: bare Talos nodes reconciled to a git-declared desired
 | `infrastructure/platform/controllers/` | Helm-installed operators: external-secrets, cert-manager, MetalLB, Traefik, Longhorn. |
 | `infrastructure/platform/config/` | Cluster-scoped config the controllers consume: 1Password store, Cloudflare issuer, MetalLB pools, Traefik service, Longhorn storage + gateway. |
 | `infrastructure/talos/tom/` | Talos machine config — only `*.patch.yaml` inputs are committed; secrets and generated node configs are gitignored. |
-| `apps/tom/` | Workloads: `pihole`, `actualbudget`. |
+| `apps/tom/` | Workloads: `pihole`. |
 
 ## Documents
 

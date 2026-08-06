@@ -20,7 +20,7 @@ Austere lookup for terms, hostnames, and conventions used across `homelab/`.
 | **ImageUpdateAutomation** | Flux resource that rewrites the `# {"$imagepolicy": ...}`-marked tag in the repo and pushes the change to an image-automation branch. |
 | **`image-automation-<cluster>-<app>`** | Branch naming for Flux image bumps (e.g. `image-automation-tom-pihole`). CI parses it into a PR title and deletes the branch on merge. |
 | **`controlplane1.tom` / `worker1.tom`** | The two node hostnames, set by the Talos patches. Static IPs `192.168.1.10` (control plane) and `192.168.1.11` (worker). |
-| **`<app>.dloez.dev`** | Public hostname pattern for each web app (`pihole.dloez.dev`, `actualbudget.dloez.dev`, `longhorn.dloez.dev`), served over HTTPS via Traefik with a cert-manager certificate. |
+| **`<app>.dloez.dev`** | Public hostname pattern for each web app (`pihole.dloez.dev`, `longhorn.dloez.dev`), served over HTTPS via Traefik with a cert-manager certificate. |
 
 ---
 
