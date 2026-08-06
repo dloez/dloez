@@ -171,7 +171,6 @@ spec:
               cpu: '1'
             limits:
               memory: '7Gi'
-              cpu: '2'
       volumes:
         - name: nethermind-data
           persistentVolumeClaim:
@@ -291,10 +290,9 @@ spec:
           resources:
             requests:
               memory: '2Gi'
-              cpu: '500m'
+              cpu: '1'
             limits:
               memory: '4Gi'
-              cpu: '1'
       volumes:
         - name: lighthouse-beacon-data
           persistentVolumeClaim:
