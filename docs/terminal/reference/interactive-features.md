@@ -18,6 +18,10 @@ fzf is installed as a single binary to `~/.local/bin/fzf` (alongside starship). 
 
 The `fzf --zsh` source is redirected with `2>/dev/null`. fzf snapshots every shell option at load and `eval`s it back to restore state; that snapshot includes `zle on`, which zsh refuses to change at runtime, so an interactive shell would otherwise print `can't change option: zle` twice on every startup. The warning is cosmetic — the widgets use function-local `setopt` and work regardless — and the redirect only silences the sourced code's stderr, not the fzf binary's own errors.
 
+## kubectl
+
+When `kubectl` is on `PATH`, `zshrc` loads its zsh completions through the same `_zsource_gen` cache as starship and fzf (`~/.cache/zsh/kubectl-init.zsh`, regenerated after each `install.sh` run), so the ~100ms `kubectl completion zsh` call is paid once, not per shell. It also defines `k` as an alias for `kubectl` with completions attached (`compdef k=kubectl`). Machines without `kubectl` skip the whole block.
+
 ## History substring search
 
 `config/zsh/history-search.zsh` binds `↑`/`↓` to `up-line-or-beginning-search` / `down-line-or-beginning-search`: with text already on the line, the arrows walk only history entries that start with that prefix; on an empty line they behave like ordinary history navigation. Both CSI (`^[[A`) and SS3 (`^[OA`) sequences are bound so the arrows work across terminals regardless of keypad mode.

@@ -8,6 +8,7 @@ Portable zsh setup that bootstraps a fresh Linux, macOS, or WSL machine with one
 - **Async prompt rendering** — a pure-zsh instant first paint (zero subprocesses), then git and context info swapped in from a background starship render.
 - **fzf** integration (single binary in `~/.local/bin`) — `Ctrl-R` history search, `Ctrl-T` file paste, `Alt-C` directory jump.
 - **zsh completion** — `compinit` with a cached dump, menu selection, case-insensitive matching, and colored candidates.
+- **kubectl completion + `k` alias** — loaded through the generated-init cache when `kubectl` is present; skipped otherwise.
 - **History-substring search** — `↑`/`↓` walk only the history entries matching the typed prefix.
 - **herdr** — the mouse-first terminal multiplexer for AI coding agents (binary in `~/.local/bin`, config symlinked from the repo).
 - **Neovim + kickstart** — installs a recent Neovim into `~/.local` and clones the personal kickstart fork (`dloez/kickstart.nvim`) into `~/.config/nvim` (if absent) as part of the default setup. See [Layout and testing](reference/layout-and-testing.md).

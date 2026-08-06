@@ -44,6 +44,12 @@ _zsource_gen "$ZSH_CACHE/starship-init.zsh" starship init zsh
 
 command -v fzf >/dev/null 2>&1 && _zsource_gen "$ZSH_CACHE/fzf-init.zsh" fzf --zsh
 
+if command -v kubectl >/dev/null 2>&1; then
+  _zsource_gen "$ZSH_CACHE/kubectl-init.zsh" kubectl completion zsh
+  alias k=kubectl
+  compdef k=kubectl 2>/dev/null
+fi
+
 [ -f "$ZSH_CONFIG/history-search.zsh" ] && source "$ZSH_CONFIG/history-search.zsh"
 
 _zsource "$PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
