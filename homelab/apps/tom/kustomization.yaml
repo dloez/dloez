@@ -4,4 +4,3 @@ kind: Kustomization
 resources:
   - pihole.yaml
   - gnosis.yaml
-  - gnosis-beacon-restart.yaml

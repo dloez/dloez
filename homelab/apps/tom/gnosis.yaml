@@ -226,7 +226,7 @@ spec:
     spec:
       containers:
         - name: lighthouse-beacon
-          image: sigp/lighthouse:v8.2.1
+          image: sigp/lighthouse@sha256:3a3009165ed8097ed6be794ffb193c08d294aec12572cfe96026e00b0586689c
           args:
             - 'lighthouse'
             - 'bn'

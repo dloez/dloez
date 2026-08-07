@@ -34,6 +34,7 @@ Bring the `gnosis` app (Nethermind execution client + Lighthouse beacon + Lighth
 - To add validators later: generate more keys from the same mnemonic (offline), add `keystore-1`, `keystore-2`, … fields to the 1Password item, extend the `gnosis-validator-keys` `ExternalSecret` and the keystores volume in `gnosis.yaml`, and deposit 1 GNO each.
 - To exit: `lighthouse account validator exit` from within the validator pod — see the Lighthouse book. Exited stake returns to the withdrawal address set at key generation.
 - Client version bumps arrive as normal image-tag edits in `gnosis.yaml` (no image automation wired for now); check client release notes for breaking flags before merging.
+- The beacon is the exception: it is pinned to an `unstable` image *digest* rather than a release tag while it carries an unreleased memory-leak fix. Do not "tidy" it back to a tag until v8.3.0 ships — see the [architecture](../explanation/architecture.md) note for why, and what must be restored if it is reverted.
 
 ---
 
