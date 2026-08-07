@@ -289,10 +289,10 @@ spec:
             failureThreshold: 10
           resources:
             requests:
-              memory: '2Gi'
+              memory: '4Gi'
               cpu: '1'
             limits:
-              memory: '4Gi'
+              memory: '6Gi'
       volumes:
         - name: lighthouse-beacon-data
           persistentVolumeClaim:
