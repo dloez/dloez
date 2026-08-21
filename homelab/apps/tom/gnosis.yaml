@@ -167,10 +167,10 @@ spec:
             failureThreshold: 10
           resources:
             requests:
-              memory: '4Gi'
+              memory: '6Gi'
               cpu: '1'
             limits:
-              memory: '7Gi'
+              memory: '10Gi'
       volumes:
         - name: nethermind-data
           persistentVolumeClaim:
