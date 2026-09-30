@@ -29,6 +29,10 @@ The whole step is guarded and self-skipping — it never breaks the rest of the 
 - If `powershell.exe` is missing, or no writable Windows temp dir can be resolved, it warns and skips.
 - If the Windows-side script errors, it warns and prints the captured status but the installer still finishes.
 
+## Opening URLs in the Windows browser
+
+WSL has no Linux browser, so tools that open a URL (OAuth logins, `gh`, Claude Code) fail or print a link nobody clicks. `zshrc` sets `BROWSER` to `powershell.exe -NoProfile -Command Start-Process %s` when `$WSL_DISTRO_NAME` is set, which hands the URL to the Windows default browser. The guard keeps it inert off WSL.
+
 ---
 
 Up: [Terminal](../index.md)
