@@ -24,7 +24,7 @@ Bring the `gnosis` app (Nethermind execution client + Lighthouse beacon + Lighth
 
 - `flux get kustomizations` — `apps` is `Ready`.
 - `kubectl get pods -n gnosis` — all three pods `Running`, restarts stable.
-- `kubectl exec -n gnosis deploy/lighthouse-beacon -- curl -s http://localhost:5052/eth/v1/node/syncing` — `"is_syncing":false`.
+- `kubectl port-forward -n gnosis deploy/lighthouse-beacon 5052:5052 & curl -s localhost:5052/eth/v1/node/syncing` — `"is_syncing":false` (the Lighthouse image has no `curl`, so `kubectl exec` cannot be used).
 - `kubectl logs -n gnosis deploy/lighthouse-validator | grep -i attest` — successful attestations after activation.
 - Public dashboard: look up your validator's public key on [beaconchain.gnosischain.com](https://beaconchain.gnosischain.com) — the Gnosis fork of beaconcha.in — where the balance should tick upward every epoch. No wallet connection is needed or wanted: the pubkey is the lookup key, so monitoring is read-only from any device. Alternatives are [dora.gnosischain.com](https://dora.gnosischain.com) and [beacon.gnosisscan.io](https://beacon.gnosisscan.io). For phone alerts on missed duties, the beaconcha.in **Beaconchain Dashboard** app supports Gnosis validators and pushes notifications when one goes offline.
 

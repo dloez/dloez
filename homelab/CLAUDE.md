@@ -26,4 +26,5 @@
 - [Overview](../docs/homelab/index.md)
 - [Architecture](../docs/homelab/explanation/architecture.md)
 - [Bootstrap the cluster](../docs/homelab/how-to/bootstrap-cluster.md)
+- [Recover worker1 from a storage stall](../docs/homelab/how-to/recover-worker-storage-stall.md)
 - [Dictionary](../docs/homelab/reference/dictionary.md)

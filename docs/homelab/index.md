@@ -36,6 +36,7 @@ GitOps Kubernetes homelab: bare Talos nodes reconciled to a git-declared desired
 | [Architecture](explanation/architecture.md) | Explanation | The reconcile ordering, secret flow, ingress/cert model, image automation, and storage — and why each is shaped that way. |
 | [Bootstrap the cluster](how-to/bootstrap-cluster.md) | How-to | Bring `tom` up from bare Talos nodes to a reconciling Flux install. |
 | [Deploy the Gnosis validator](how-to/deploy-gnosis-validator.md) | How-to | Key ceremony, 1Password secrets, deposit, and verification for the `gnosis` staking app. |
+| [Recover worker1 from a storage stall](how-to/recover-worker-storage-stall.md) | How-to | Recognise a silent NVMe stall on worker1, power-cycle it, and confirm the validator is attesting again. |
 | [Dictionary](reference/dictionary.md) | Reference | Terms, hostnames, IPs, and naming conventions used across the homelab. |
 
 ---
