@@ -23,7 +23,7 @@ State each doc's status at the top:
 - `make-plan` — turns a task (and any discovery doc) into a phased plan here.
 - `execute-plan` — reads a plan from here and runs it phase by phase.
 - `next-task` — takes one entry from `tasks.md`, has a context-free subagent check the entry still stands against current code before any work starts, implements it, then has a second one validate before the entry is removed. Blocked entries are worked question by question, or marked and skipped in autonomous mode.
-- `work-queue` — loops `next-task` in autonomous mode, one entry per fresh subagent, running the repo's gate itself before committing each closed entry. Faults recover rather than ending the run, and nothing is discarded to recover.
+- `work-queue` — runs `next-task` in autonomous detached mode, one entry per fresh subagent and git worktree, with entries whose `**Touches:**` lines do not overlap running side by side. It is the only writer of the queue file and the base branch: each closed entry is rebased, gated and fast-forwarded on as one commit. Faults recover rather than ending the run, and abandoned work is kept on its `wq/<slug>` branch rather than discarded.
 
 `execute-plan` and `next-task` are not the same tool: a plan is one piece of work broken into phases you check off, a queue is many independent pieces of work that each need re-checking because the code moved under them.
 
