@@ -383,6 +383,8 @@ spec:
             - '--suggested-fee-recipient'
             - '$(FEE_RECIPIENT)'
             - '--enable-doppelganger-protection'
+            - '--logfile-max-number'
+            - '0'
             - '--metrics'
             - '--metrics-address'
             - '0.0.0.0'
