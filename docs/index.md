@@ -50,4 +50,4 @@ Repo-wide conventions and CI, shared by every area.
 
 | Document | Type | Description |
 |----------|------|-------------|
-| [work-in-progress/index.md](work-in-progress/index.md) | Index | Non-authoritative plans and discovery docs, and their lifecycle. |
+| [work-in-progress/index.md](work-in-progress/index.md) | Index | Non-authoritative ideas (discovery + task queue per dir) and the backlog. |

@@ -1,30 +1,23 @@
 # Work in progress
 
-This directory holds **non-authoritative** working documents: implementation plans and discovery notes. Nothing here is a rule or a spec — the authoritative sources are the root [CLAUDE.md](../../CLAUDE.md) and the rest of [docs/](../index.md). When a plan is implemented, the durable outcome moves into `CLAUDE.md`/`docs/`; the plan itself stays here as a record.
+This directory holds **non-authoritative** working material: ideas being scoped and built, and a backlog of what belongs to none of them yet. Nothing here is a rule or a spec — the authoritative sources are the root [CLAUDE.md](../../CLAUDE.md) and the rest of [docs/](../index.md).
 
-## What lives here
+## Layout
 
-- **Plans** and **discovery docs**, paired by stem (e.g. `foo-discovery.md` → `foo-plan.md`).
-- Filenames must contain `plan` or `discovery` (this is how the skills find them).
-- Plans may also live in `docs/personal/` or `.claude/plans/`; this directory is the default.
-- An optional **task queue** at `tasks.md` — an ordered list of work, highest priority first, one `##` heading per entry. Number the headings or don't: order is carried by position in the file, and the skills match whichever the file already does rather than converting it. A queue that forbids numbering should say so in the file, since renumbering on every insert breaks each reference pointing at the entries below. The file is exempt from the naming rule above because the two skills that read it look for it by name. To call it something else, name that file as the queue in a `CLAUDE.md`; the skills read `CLAUDE.md` before they go looking, and a pointer there wins over a filename match.
+The layout is defined by the `scope` skill (`.claude/skills/scope/SKILL.md`, section "The work-in-progress layout"), not here, so it travels to every repo the skills are installed in without a `CLAUDE.md` describing it. In short:
 
-## Lifecycle
+- [backlog.md](backlog.md) — cross-cutting open questions, one-off tasks, and ideas nobody has scoped yet.
+- `<idea>/` — one dir per scoped idea, holding its `discovery.md`, its `tasks.md` work queue, and whatever else the idea needs. A question that belongs to one idea is an entry in that idea's `tasks.md`, not in the backlog.
+- No root `tasks.md` and no `open-questions.md`.
 
-State each doc's status at the top:
-
-1. **Draft** — being written or discovered; decisions still open.
-2. **In progress** — approved and being executed phase by phase.
-3. **Implemented** — done; kept for history. Fold any lasting rule/concept into `CLAUDE.md`/`docs/` before closing out.
+An idea dir lives exactly as long as its work: when its last entry closes, its durable outcome is folded into `CLAUDE.md`/`docs/` and the dir is deleted. Git history is the record.
 
 ## Skills
 
-- `scope` — interviews to surface decisions, writes a discovery doc here.
-- `make-plan` — turns a task (and any discovery doc) into a phased plan here.
-- `execute-plan` — reads a plan from here and runs it phase by phase.
-- `next-task` — takes one entry from `tasks.md`, has a context-free subagent check the entry still stands against current code before any work starts, implements it, then has a second one validate before the entry is removed. Blocked entries are worked question by question, or marked and skipped in autonomous mode.
-- `work-queue` — runs `next-task` in autonomous detached mode, one entry per fresh subagent and git worktree, with entries whose `**Touches:**` lines do not overlap running side by side. It is the only writer of the queue file and the base branch: each closed entry is rebased, gated and fast-forwarded on as one commit. Faults recover rather than ending the run, and abandoned work is kept on its `wq/<slug>` branch rather than discarded.
+- `scope` — interviews to settle every decision behind an idea, then writes its dir: `discovery.md` plus a `tasks.md` of vertical-slice entries with acceptance criteria. Re-run on an existing idea to audit and extend it; on a repo with the old flat layout it offers to migrate.
+- `next-task <idea>` — takes one entry from that idea's `tasks.md` (or `backlog`'s tasks), does a quick inline check that it still stands (a few reads, no gate run), implements it, then has a second one validate before the entry is removed. Closes out the idea when its last entry goes.
+- `work-queue <idea>` — runs `next-task` in autonomous detached mode over one idea, one entry per fresh subagent and git worktree, with entries whose `**Touches:**` lines do not overlap running side by side. It is the only writer of the queue file, the backlog and the base branch.
 
-`execute-plan` and `next-task` are not the same tool: a plan is one piece of work broken into phases you check off, a queue is many independent pieces of work that each need re-checking because the code moved under them.
+Both `next-task` and `work-queue` need the idea named; without it they ask rather than guess.
 
 See also: [docs index](../index.md).

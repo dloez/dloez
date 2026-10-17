@@ -61,9 +61,9 @@ Do NOT rely on private or session memory for durable rules. Anything that must p
 | Shell lint | `shellcheck --severity=warning terminal/install.sh terminal/test.sh terminal/verify.sh terminal/config/claude/cc-resume terminal/config/claude/statusline.sh terminal/config/claude/hooks/stop-failure.sh` |
 | Homelab (no test suite) | verify on the live cluster with `flux get kustomizations` |
 
-## Plans
+## Work in Progress
 
-Plans and discovery docs live in `docs/work-in-progress/` (default), `docs/personal/`, or `.claude/plans/`. The filename must contain `plan` or `discovery`. Use the `make-plan`, `execute-plan`, and `scope` skills to read/write them.
+Work in progress lives in `docs/work-in-progress/`: a `backlog.md` plus one dir per idea with its `discovery.md` and `tasks.md`. The `scope`, `next-task`, and `work-queue` skills own that layout — see [docs/work-in-progress/index.md](docs/work-in-progress/index.md).
 
 ---
 
