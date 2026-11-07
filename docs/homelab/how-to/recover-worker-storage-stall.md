@@ -1,6 +1,6 @@
 # Recover worker1 from a storage stall
 
-Bring the `gnosis` validator (and every other Longhorn-backed workload) back after worker1's NVMe stops completing I/O. Why this happens and how to tell it apart from a Longhorn-only fault is in [architecture → storage](../explanation/architecture.md#storage). The short version: the node still reports `Ready` and every pod still shows `Running`, but nothing that touches a volume makes progress, and the kubelet cannot kill the stuck containers.
+Bring the `gnosis` validator (and every other Longhorn-backed workload) back after worker1's NVMe stops completing I/O. Why this happens and how to tell it apart from a Longhorn-only fault is in [architecture → storage](../explanation/architecture.md#storage). The short version: the node usually still reports `Ready` and every pod still shows `Running`, but nothing that touches a volume makes progress, and the kubelet cannot kill the stuck containers. If containerd wedges too, the node goes `NotReady` (`container runtime is down, PLEG is not healthy`) instead, the gnosis pods sit in `Terminating` and their replacements in `Pending` on the `not-ready` taint — same stall, same fix.
 
 ## Prerequisites
 
@@ -33,6 +33,8 @@ Bring the `gnosis` validator (and every other Longhorn-backed workload) back aft
    ```sh
    talosctl -n 192.168.1.11 reboot --mode powercycle --wait=false
    ```
+
+   Confirm the reboot actually happened: `talosctl -n 192.168.1.11 dmesg | head -1` should show a new boot timestamp within a minute or two. On 2026-10-23 the command returned success but the node was still on its old boot six minutes later and had to be rebooted by hand.
 
 4. Watch it come back. The node re-registers within a minute; Longhorn then marks all three volumes `faulted`, auto-salvages them (`attached/unknown` → `attached/healthy`), and the kubelet recreates the pods, about four minutes after boot:
 
