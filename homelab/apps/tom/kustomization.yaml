@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - pihole.yaml
   - gnosis.yaml
+  - dj.yaml

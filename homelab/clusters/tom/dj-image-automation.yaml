@@ -1,0 +1,54 @@
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: dj
+  namespace: flux-system
+spec:
+  image: ghcr.io/dloez/enbraile-dj-bot
+  interval: 1m0s
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: dj
+  namespace: flux-system
+  labels:
+    app: dj
+spec:
+  imageRepositoryRef:
+    name: dj
+  filterTags:
+    pattern: '^main-(?P<ts>\d{14})-[0-9a-f]{7}$'
+    extract: '$ts'
+  policy:
+    numerical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageUpdateAutomation
+metadata:
+  name: dj
+  namespace: flux-system
+spec:
+  policySelector:
+    matchLabels:
+      app: dj
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        email: fluxcdbot@users.noreply.github.com
+        name: fluxcdbot
+      messageTemplate: 'deploy dj {{range .Changed.Changes}}{{print .NewValue}}{{end}}'
+    push:
+      branch: main
+  interval: 1m0s
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  update:
+    path: homelab/apps/tom
+    strategy: Setters

@@ -15,7 +15,7 @@ Each stage produces the API types or running controllers the next one needs, so 
 | crds | `infrastructure/platform/crds` | Gateway API CRDs + Traefik gateway RBAC | controllers install resources of these kinds. |
 | controllers | `infrastructure/platform/controllers` | external-secrets, cert-manager, MetalLB, Traefik, Longhorn (Helm) | configs are custom resources those controllers own. |
 | configs | `infrastructure/platform/config` | `ClusterSecretStore`, `ClusterIssuer`, MetalLB pools, Traefik service, Longhorn `StorageClass` + gateway | apps consume all of these. |
-| apps | `apps/tom` | pihole, gnosis | — |
+| apps | `apps/tom` | pihole, gnosis, dj | — |
 
 - The first three stages set `wait: true`, so Flux blocks until each is *Ready* — CRDs established, HelmReleases healthy — before starting the next. This trades a slower first bootstrap for a deterministic one: a config CR applied before its controller exists would only error and retry-loop.
 - Ordering is enforced by `dependsOn`, not filesystem layout — the split into `crds` / `controllers` / `config` directories mirrors the three phases so the boundary is obvious.
@@ -58,8 +58,17 @@ pihole's container tag is updated by Flux, but changes land through a reviewed P
 
 Decisions:
 
-- **PR-gated, not auto-merged.** A homelab still wants a human glance at an image bump before it hits the only DNS server on the network.
+- **PR-gated, not auto-merged** — for pihole. A homelab still wants a human glance at an image bump before it hits the only DNS server on the network.
+- **dj is the exception: its automation pushes straight to `main`.** `ImageUpdateAutomation/dj` (`clusters/tom/dj-image-automation.yaml`) follows `ghcr.io/dloez/enbraile-dj-bot`, built by the `enbraile` repo on every push to its `main`, and commits the newest `main-<timestamp>-<sha>` tag directly, so the bot deploys on push like the rest of `enbraile`. Each automation carries a `policySelector` on its policy's `app` label; without it, the pihole automation would also rewrite dj's tag onto the pihole PR branch, since both scan `homelab/apps/tom`.
 - The `image-automation-<cluster>-<app>` convention encodes enough for CI to generate the PR title and to scope branch cleanup.
+
+## The dj app
+
+The `enbraile` group's Discord music bot: one Node pod (gateway, voice, yt-dlp, ffmpeg, SQLite on a 1 Gi `longhorn-single-replica` volume) and a `cloudflared` pod. Its owning docs are in the `enbraile` repo (`docs/dj/bot/`).
+
+- **No Gateway/HTTPRoute; a Cloudflare Tunnel instead.** The bot's API must be reachable from Vercel, and the cluster has no public ingress. The remotely-managed tunnel `dj` publishes `dj-api.enbraile.vip` to `http://dj.dj.svc.cluster.local:8080` with an outbound-only connection, so no router port opens and the home IP stays private.
+- **Secrets from the `dj` 1Password item** (`bot-token`, `internal-secret`, `tunnel-token`) through the usual ExternalSecret.
+- **`Recreate`, one replica:** two copies would both join voice with the same bot token.
 
 ## The gnosis staking app
 
