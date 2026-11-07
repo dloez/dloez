@@ -78,7 +78,7 @@ spec:
               containerPort: 8080
           env:
             - name: PUBLIC_URL
-              value: 'https://dj.TAILNET.ts.net'
+              value: 'https://dj.tailc952d1.ts.net'
             - name: DATA_PATH
               value: '/data/dj.db'
             - name: DISCORD_BOT_TOKEN
