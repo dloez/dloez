@@ -64,10 +64,11 @@ Decisions:
 
 ## The dj app
 
-The `enbraile` group's Discord music bot: one Node pod (gateway, voice, yt-dlp, ffmpeg, SQLite on a 1 Gi `longhorn-single-replica` volume) and a `cloudflared` pod. Its owning docs are in the `enbraile` repo (`docs/dj/bot/`).
+The `enbraile` group's Discord music bot: one Node pod (gateway, voice, yt-dlp, ffmpeg, SQLite on a 1 Gi `longhorn-single-replica` volume) and a `tailscale` pod. Its owning docs are in the `enbraile` repo (`docs/dj/bot/`).
 
-- **No Gateway/HTTPRoute; a Cloudflare Tunnel instead.** The bot's API must be reachable from Vercel, and the cluster has no public ingress. The remotely-managed tunnel `dj` publishes `dj-api.enbraile.vip` to `http://dj.dj.svc.cluster.local:8080` with an outbound-only connection, so no router port opens and the home IP stays private.
-- **Secrets from the `dj` 1Password item** (`bot-token`, `internal-secret`, `tunnel-token`) through the usual ExternalSecret.
+- **No Gateway/HTTPRoute; Tailscale Funnel instead.** The bot's API must be reachable from Vercel and from listeners' browsers, and the cluster has no public ingress. The `tailscale` pod joins the tailnet as `dj` (tagged `tag:dj`) and serves `https://dj.<tailnet>.ts.net` through Funnel to `http://dj.dj.svc.cluster.local:8080` (`ConfigMap/tailscale-serve`), outbound-only, so no router port opens and the home IP stays private. It was chosen over a Cloudflare Tunnel because Spanish ISPs block Cloudflare's IPs during LaLiga matches.
+- **The tailscale pod runs unprivileged:** userspace networking (`TS_USERSPACE`), so it needs no `NET_ADMIN` and fits the namespace's `restricted` policy. It keeps its node state in `Secret/tailscale-state` (`TS_KUBE_SECRET`, with a Role for just that secret), so a restart reuses the same device instead of registering a new `dj-1`, and `TS_AUTH_ONCE` uses the auth key only for the first login.
+- **Secrets from the `dj` 1Password item** (`bot-token`, `internal-secret`, `ts-authkey`) through the usual ExternalSecret.
 - **`Recreate`, one replica:** two copies would both join voice with the same bot token.
 
 ## The gnosis staking app

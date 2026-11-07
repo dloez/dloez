@@ -26,9 +26,9 @@ spec:
     - secretKey: INTERNAL_SECRET
       remoteRef:
         key: dj/internal-secret
-    - secretKey: TUNNEL_TOKEN
+    - secretKey: TS_AUTHKEY
       remoteRef:
-        key: dj/tunnel-token
+        key: dj/ts-authkey
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -78,7 +78,7 @@ spec:
               containerPort: 8080
           env:
             - name: PUBLIC_URL
-              value: 'https://dj-api.enbraile.vip'
+              value: 'https://dj.TAILNET.ts.net'
             - name: DATA_PATH
               value: '/data/dj.db'
             - name: DISCORD_BOT_TOKEN
@@ -128,49 +128,121 @@ spec:
       port: 8080
       targetPort: http
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tailscale
+  namespace: dj
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tailscale
+  namespace: dj
+rules:
+  - apiGroups: ['']
+    resources: ['secrets']
+    verbs: ['create']
+  - apiGroups: ['']
+    resources: ['secrets']
+    resourceNames: ['tailscale-state']
+    verbs: ['get', 'update', 'patch']
+  - apiGroups: ['']
+    resources: ['events']
+    verbs: ['create', 'patch', 'get']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tailscale
+  namespace: dj
+subjects:
+  - kind: ServiceAccount
+    name: tailscale
+    namespace: dj
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tailscale
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tailscale-serve
+  namespace: dj
+data:
+  serve.json: |
+    {
+      "TCP": { "443": { "HTTPS": true } },
+      "Web": {
+        "${TS_CERT_DOMAIN}:443": {
+          "Handlers": { "/": { "Proxy": "http://dj.dj.svc.cluster.local:8080" } }
+        }
+      },
+      "AllowFunnel": { "${TS_CERT_DOMAIN}:443": true }
+    }
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cloudflared
+  name: tailscale
   namespace: dj
   labels:
-    app: cloudflared
+    app: tailscale
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
-      app: cloudflared
+      app: tailscale
   template:
     metadata:
       labels:
-        app: cloudflared
+        app: tailscale
     spec:
+      serviceAccountName: tailscale
       securityContext:
         runAsNonRoot: true
-        runAsUser: 65532
+        runAsUser: 1000
+        runAsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: cloudflared
-          image: docker.io/cloudflare/cloudflared:2026.10.7
-          args:
-            - tunnel
-            - --no-autoupdate
-            - run
+        - name: tailscale
+          image: docker.io/tailscale/tailscale:v1.104.4
           env:
-            - name: TUNNEL_TOKEN
+            - name: TS_HOSTNAME
+              value: 'dj'
+            - name: TS_USERSPACE
+              value: 'true'
+            - name: TS_KUBE_SECRET
+              value: 'tailscale-state'
+            - name: TS_SERVE_CONFIG
+              value: '/config/serve.json'
+            - name: TS_AUTH_ONCE
+              value: 'true'
+            - name: TS_AUTHKEY
               valueFrom:
                 secretKeyRef:
                   name: dj
-                  key: TUNNEL_TOKEN
+                  key: TS_AUTHKEY
           resources:
             requests:
               cpu: 10m
-              memory: 32Mi
+              memory: 48Mi
             limits:
-              memory: 128Mi
+              memory: 192Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
+          volumeMounts:
+            - name: serve
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: serve
+          configMap:
+            name: tailscale-serve
