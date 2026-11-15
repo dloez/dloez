@@ -10,7 +10,7 @@ metadata:
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
-  name: dj
+  name: discord-bot-enbraile
   namespace: dj
 spec:
   secretStoreRef:
@@ -92,17 +92,17 @@ spec:
             - name: DISCORD_BOT_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: dj
+                  name: discord-bot-enbraile
                   key: DISCORD_BOT_TOKEN
             - name: INTERNAL_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: dj
+                  name: discord-bot-enbraile
                   key: INTERNAL_SECRET
             - name: ANTHROPIC_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: dj
+                  name: discord-bot-enbraile
                   key: ANTHROPIC_API_KEY
                   optional: true
             - name: TRANSCRIPTS_ENDPOINT
@@ -112,13 +112,13 @@ spec:
             - name: B2_KEY_ID
               valueFrom:
                 secretKeyRef:
-                  name: dj
+                  name: discord-bot-enbraile
                   key: B2_KEY_ID
                   optional: true
             - name: B2_APPLICATION_KEY
               valueFrom:
                 secretKeyRef:
-                  name: dj
+                  name: discord-bot-enbraile
                   key: B2_APPLICATION_KEY
                   optional: true
           readinessProbe:
@@ -255,7 +255,7 @@ spec:
             - name: TS_AUTHKEY
               valueFrom:
                 secretKeyRef:
-                  name: dj
+                  name: discord-bot-enbraile
                   key: TS_AUTHKEY
           resources:
             requests:
