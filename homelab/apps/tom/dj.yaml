@@ -21,16 +21,22 @@ spec:
   data:
     - secretKey: DISCORD_BOT_TOKEN
       remoteRef:
-        key: dj/bot-token
+        key: discord-bot-enbraile/bot-token
     - secretKey: INTERNAL_SECRET
       remoteRef:
-        key: dj/internal-secret
+        key: discord-bot-enbraile/internal-secret
     - secretKey: TS_AUTHKEY
       remoteRef:
-        key: dj/ts-authkey
+        key: discord-bot-enbraile/ts-authkey
     - secretKey: ANTHROPIC_API_KEY
       remoteRef:
-        key: dj/anthropic-api-key
+        key: discord-bot-enbraile/anthropic-api-key
+    - secretKey: B2_KEY_ID
+      remoteRef:
+        key: discord-bot-enbraile/b2-key-id
+    - secretKey: B2_APPLICATION_KEY
+      remoteRef:
+        key: discord-bot-enbraile/b2-application-key
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -98,6 +104,22 @@ spec:
                 secretKeyRef:
                   name: dj
                   key: ANTHROPIC_API_KEY
+                  optional: true
+            - name: TRANSCRIPTS_ENDPOINT
+              value: 'https://s3.eu-central-003.backblazeb2.com'
+            - name: TRANSCRIPTS_BUCKET
+              value: 'discord-voice-transcriptions-enbraile'
+            - name: B2_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: dj
+                  key: B2_KEY_ID
+                  optional: true
+            - name: B2_APPLICATION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dj
+                  key: B2_APPLICATION_KEY
                   optional: true
           readinessProbe:
             httpGet:
