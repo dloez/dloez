@@ -28,6 +28,9 @@ spec:
     - secretKey: TS_AUTHKEY
       remoteRef:
         key: dj/ts-authkey
+    - secretKey: ANTHROPIC_API_KEY
+      remoteRef:
+        key: dj/anthropic-api-key
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -90,6 +93,12 @@ spec:
                 secretKeyRef:
                   name: dj
                   key: INTERNAL_SECRET
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dj
+                  key: ANTHROPIC_API_KEY
+                  optional: true
           readinessProbe:
             httpGet:
               path: /healthz
