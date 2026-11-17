@@ -80,7 +80,7 @@ spec:
       terminationGracePeriodSeconds: 15
       containers:
         - name: dj
-          image: ghcr.io/dloez/enbraile-dj-bot:main-20261117011602-63f1393 # {"$imagepolicy": "flux-system:dj"}
+          image: ghcr.io/dloez/enbraile-dj-bot:main-20261117142930-5155bf6 # {"$imagepolicy": "flux-system:dj"}
           ports:
             - name: http
               containerPort: 8080
